@@ -36,12 +36,11 @@
         </li>
     </ul>
     <div class="sidebar-footer">
-        <label class="theme-toggle" for="themeToggle" title="Basculer entre thème clair et sombre">
+        <div class="theme-toggle" id="themeToggle" role="button" tabindex="0" title="Basculer entre thème clair et sombre">
             <i class="bi bi-sun-fill"></i>
-            <input type="checkbox" id="themeToggle" aria-label="Activer le thème clair">
             <span class="theme-toggle-slider"></span>
             <i class="bi bi-moon-stars-fill"></i>
-        </label>
+        </div>
         <div class="connection-status" id="connectionStatus">
             <span class="status-dot" th:classappend="${connected} ? 'connected' : 'disconnected'"></span>
             <span th:text="${connected} ? 'Connected' : 'Disconnected'">Status</span>

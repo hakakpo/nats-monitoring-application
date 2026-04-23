@@ -68,6 +68,18 @@ public class ApiController {
         return connections != null ? ResponseEntity.ok(connections) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
     }
 
+    @GetMapping("/routes")
+    public ResponseEntity<RoutezResponse> routes() {
+        RoutezResponse routez = natsService.getRoutez();
+        return routez != null ? ResponseEntity.ok(routez) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
+    @GetMapping("/subscriptions")
+    public ResponseEntity<SubszResponse> subscriptions() {
+        SubszResponse subsz = natsService.getSubsz();
+        return subsz != null ? ResponseEntity.ok(subsz) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
     @GetMapping("/metrics/rates")
     public ResponseEntity<Map<String, Object>> rates() {
         return ResponseEntity.ok(Map.of(

@@ -161,12 +161,12 @@ public class NatsMonitoringService {
         return objectMapper.readValue(responseBody, ConnectionsResponse.class);
     }
 
-    public Map<String, Object> getSubsz() {
+    public SubszResponse getSubsz() {
         try {
             return restClient.get()
-                    .uri("/subsz?subs=true")
+                    .uri("/subsz")
                     .retrieve()
-                    .body(Map.class);
+                    .body(SubszResponse.class);
         } catch (RestClientException e) {
             log.error("Failed to fetch subscriptions: {}", e.getMessage());
             return null;

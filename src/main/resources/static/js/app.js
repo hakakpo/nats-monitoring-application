@@ -131,9 +131,16 @@
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
 
-        toggle.checked = getActiveTheme() === 'light';
-        toggle.addEventListener('change', function() {
-            applyTheme(toggle.checked ? 'light' : 'dark');
+        toggle.addEventListener('click', function() {
+            var next = getActiveTheme() === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+        });
+
+        toggle.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle.click();
+            }
         });
     }
 
@@ -244,7 +251,7 @@
     }
 
     function generateLabels(count) {
-        return Array.from({length: count}, (_, i) => '');
+        return Array.from({length: count}, () => '');
     }
 
     function updateChart(chart, historyData) {

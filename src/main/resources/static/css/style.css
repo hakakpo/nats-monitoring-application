@@ -107,19 +107,14 @@ body {
     user-select: none;
 }
 
-.theme-toggle input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
 .theme-toggle-slider {
     position: relative;
+    flex-shrink: 0;
     width: 44px;
     height: 24px;
     border-radius: 999px;
     background: var(--border);
-    transition: background 0.2s;
+    transition: background 0.25s;
 }
 
 .theme-toggle-slider::after {
@@ -131,14 +126,14 @@ body {
     height: 18px;
     border-radius: 50%;
     background: var(--text);
-    transition: transform 0.2s;
+    transition: transform 0.25s, background 0.25s;
 }
 
-.theme-toggle input:checked + .theme-toggle-slider {
+[data-theme="light"] .theme-toggle-slider {
     background: var(--primary);
 }
 
-.theme-toggle input:checked + .theme-toggle-slider::after {
+[data-theme="light"] .theme-toggle-slider::after {
     transform: translateX(20px);
     background: #ffffff;
 }
@@ -406,6 +401,8 @@ body {
     padding: 0.75rem;
     background: var(--bg-dark);
     border-radius: 8px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .info-item-label {
@@ -422,10 +419,12 @@ body {
 }
 
 .truncatable {
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    cursor: default;
 }
 
 /* Stream detail */

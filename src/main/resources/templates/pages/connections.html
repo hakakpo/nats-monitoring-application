@@ -6,8 +6,8 @@
 
 <main class="main-content">
     <div class="page-header">
-        <h1>Connections</h1>
-        <p>Active client connections to the NATS server</p>
+        <h1>Connections & Network</h1>
+        <p>Client connections, cluster routes and subscriptions</p>
     </div>
 
     <div th:if="${!connected}" class="empty-state">
@@ -15,27 +15,141 @@
         <p>Not connected to NATS server</p>
     </div>
 
-    <div th:if="${connected && connections != null}">
+    <div th:if="${connected}">
+
+        <!-- Summary Metrics -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3 col-sm-6">
                 <div class="metric-card">
                     <div class="metric-icon blue"><i class="bi bi-plug"></i></div>
-                    <div class="metric-value" th:text="${connections.numConnections()}">0</div>
+                    <div class="metric-value" th:text="${connections != null ? connections.numConnections() : 0}">0</div>
                     <div class="metric-label">Active Connections</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3 col-sm-6">
                 <div class="metric-card">
                     <div class="metric-icon green"><i class="bi bi-arrow-repeat"></i></div>
-                    <div class="metric-value" th:text="${connections.total()}">0</div>
+                    <div class="metric-value" th:text="${connections != null ? connections.total() : 0}">0</div>
                     <div class="metric-label">Total Connections</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon purple"><i class="bi bi-diagram-3"></i></div>
+                    <div class="metric-value" th:text="${routez != null ? routez.numRoutes() : 0}">0</div>
+                    <div class="metric-label">Cluster Routes</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon yellow"><i class="bi bi-hash"></i></div>
+                    <div class="metric-value" th:text="${subsz != null ? subsz.numSubscriptions() : 0}">0</div>
+                    <div class="metric-label">Subscriptions</div>
                 </div>
             </div>
         </div>
 
-        <div class="data-card">
+        <!-- Subscriptions Details -->
+        <div th:if="${subsz != null}" class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-hash me-2"></i>Subscription Statistics</h5>
+                        <span class="badge-status info" th:text="|${subsz.numSubscriptions()} subscriptions|">0</span>
+                    </div>
+                    <div class="data-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-item-label">Total Subscriptions</div>
+                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numSubscriptions(), 1, 'COMMA')}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Cache Size</div>
+                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numCache(), 1, 'COMMA')}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Cache Hit Rate</div>
+                                <div class="info-item-value" th:text="${#numbers.formatDecimal(subsz.cacheHitRate() * 100, 1, 1) + '%'}">0%</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Inserts</div>
+                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numInserts(), 1, 'COMMA')}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Removes</div>
+                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numRemoves(), 1, 'COMMA')}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Matches</div>
+                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numMatches(), 1, 'COMMA')}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Fanout</div>
+                                <div class="info-item-value" th:text="${subsz.maxFanout()}">0</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Avg Fanout</div>
+                                <div class="info-item-value" th:text="${#numbers.formatDecimal(subsz.avgFanout(), 1, 2)}">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cluster Routes -->
+        <div th:if="${routez != null && routez.routes() != null && !routez.routes().isEmpty()}" class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-diagram-3 me-2"></i>Cluster Routes</h5>
+                        <span class="badge-status info" th:text="|${routez.numRoutes()} routes|">0</span>
+                    </div>
+                    <div class="data-card-body p-0">
+                        <table class="table-dark-custom">
+                            <thead>
+                            <tr>
+                                <th>RID</th>
+                                <th>Remote ID</th>
+                                <th>IP</th>
+                                <th>Port</th>
+                                <th>Direction</th>
+                                <th>Msgs In</th>
+                                <th>Msgs Out</th>
+                                <th>Pending</th>
+                                <th>Subscriptions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="route : ${routez.routes()}">
+                                <td th:text="${route.rid()}">0</td>
+                                <td>
+                                    <span class="truncatable" style="max-width: 120px; display: inline-block; vertical-align: middle;" th:title="${route.remoteId()}" th:text="${route.remoteId()}">-</span>
+                                </td>
+                                <td th:text="${route.ip()}">-</td>
+                                <td th:text="${route.port()}">0</td>
+                                <td>
+                                    <span class="badge-status" th:classappend="${route.didSolicit()} ? 'info' : 'healthy'" th:text="${route.didSolicit()} ? 'Solicited' : 'Accepted'">-</span>
+                                </td>
+                                <td th:text="${#numbers.formatInteger(route.inMsgs(), 1, 'COMMA')}">0</td>
+                                <td th:text="${#numbers.formatInteger(route.outMsgs(), 1, 'COMMA')}">0</td>
+                                <td>
+                                    <span th:class="${route.pendingSize() > 0 ? 'badge-status warning' : ''}" th:text="${route.pendingSize()}">0</span>
+                                </td>
+                                <td th:text="${route.subscriptions()}">0</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Details -->
+        <div th:if="${connections != null}" class="data-card">
             <div class="data-card-header">
                 <h5><i class="bi bi-plug me-2"></i>Connection Details</h5>
+                <span class="badge-status info" th:text="|${connections.numConnections()} active|">0</span>
             </div>
             <div class="data-card-body p-0">
                 <div th:if="${connections.connections() == null || connections.connections().isEmpty()}" class="empty-state">
@@ -61,7 +175,9 @@
                     <tbody>
                     <tr th:each="conn : ${connections.connections()}">
                         <td th:text="${conn.cid()}">0</td>
-                        <td th:text="${conn.name() != null ? conn.name() : '-'}" style="font-family: monospace;">-</td>
+                        <td>
+                            <span class="truncatable" style="max-width: 150px; display: inline-block; vertical-align: middle; font-family: monospace;" th:title="${conn.name()}" th:text="${conn.name() != null ? conn.name() : '-'}">-</span>
+                        </td>
                         <td th:text="${conn.ip()}">-</td>
                         <td th:text="${conn.lang() != null ? conn.lang() : '-'}">-</td>
                         <td th:text="${conn.version() != null ? conn.version() : '-'}">-</td>

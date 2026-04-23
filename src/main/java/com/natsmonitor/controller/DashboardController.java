@@ -25,12 +25,16 @@ public class DashboardController {
         JetStreamInfo jsInfo = natsService.getJetStreamInfo();
         StreamListResponse streams = natsService.getStreams();
         ConnectionsResponse connections = natsService.getConnections();
+        SubszResponse subsz = natsService.getSubsz();
+        RoutezResponse routez = natsService.getRoutez();
 
         model.addAttribute("connected", serverInfo != null);
         model.addAttribute("serverInfo", serverInfo);
         model.addAttribute("jsInfo", jsInfo);
         model.addAttribute("streams", streams);
         model.addAttribute("connections", connections);
+        model.addAttribute("subsz", subsz);
+        model.addAttribute("routez", routez);
         model.addAttribute("natsUrl", natsService.getNatsUrl());
         model.addAttribute("alertCount24h", alertService.getAlertCountLast24h());
         model.addAttribute("formatBytes", natsService);
@@ -62,7 +66,11 @@ public class DashboardController {
     @GetMapping("/connections")
     public String connections(Model model) {
         ConnectionsResponse connections = natsService.getConnections();
+        RoutezResponse routez = natsService.getRoutez();
+        SubszResponse subsz = natsService.getSubsz();
         model.addAttribute("connections", connections);
+        model.addAttribute("routez", routez);
+        model.addAttribute("subsz", subsz);
         model.addAttribute("connected", natsService.isConnected());
         model.addAttribute("activePage", "connections");
         return "pages/connections";

@@ -184,6 +184,63 @@
         </div>
     </div>
 
+    <!-- Routes & Subscriptions Overview -->
+    <div th:if="${connected}" class="row g-3 mb-4">
+        <div class="col-md-6" th:if="${subsz != null}">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-hash me-2"></i>Subscriptions</h5>
+                    <span class="badge-status info" th:text="|${subsz.numSubscriptions()} subs|">0</span>
+                </div>
+                <div class="data-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-item-label">Total Subscriptions</div>
+                            <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numSubscriptions(), 1, 'COMMA')}">0</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Cache Hit Rate</div>
+                            <div class="info-item-value" th:text="${#numbers.formatDecimal(subsz.cacheHitRate() * 100, 1, 1) + '%'}">0%</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Matches</div>
+                            <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numMatches(), 1, 'COMMA')}">0</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Max Fanout</div>
+                            <div class="info-item-value" th:text="${subsz.maxFanout()}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6" th:if="${routez != null}">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-diagram-3 me-2"></i>Cluster Routes</h5>
+                    <span class="badge-status" th:classappend="${routez.numRoutes() > 0} ? 'healthy' : 'warning'" th:text="|${routez.numRoutes()} routes|">0</span>
+                </div>
+                <div class="data-card-body">
+                    <div th:if="${routez.routes() != null && !routez.routes().isEmpty()}">
+                        <div class="info-grid">
+                            <div class="info-item" th:each="route : ${routez.routes()}">
+                                <div class="info-item-label" th:text="|Route #${route.rid()}|">Route</div>
+                                <div class="info-item-value truncatable" th:title="${route.ip() + ':' + route.port()}" th:text="${route.ip() + ':' + route.port()}">-</div>
+                                <div style="margin-top: 0.25rem;">
+                                    <span class="badge-status" th:classappend="${route.didSolicit()} ? 'info' : 'healthy'" th:text="${route.didSolicit()} ? 'Solicited' : 'Accepted'" style="font-size: 0.65rem;">-</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.5rem;" th:text="|${route.subscriptions()} subs|">0 subs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${routez.routes() == null || routez.routes().isEmpty()}" class="empty-state" style="padding: 1.5rem;">
+                        <p style="margin: 0; font-size: 0.9rem;">Standalone mode — no cluster routes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Streams Overview -->
     <div th:if="${connected && streams != null && streams.streams() != null}" class="row g-3 mb-4">
         <div class="col-12">
