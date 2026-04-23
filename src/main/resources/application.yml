@@ -1,0 +1,59 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: nats-monitoring
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  datasource:
+    url: jdbc:h2:file:./data/nats-monitor-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:false}
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# NATS Monitoring Configuration
+nats:
+  monitoring:
+    url: ${NATS_MONITORING_URL:http://localhost:8222}
+    poll-interval-seconds: ${NATS_POLL_INTERVAL:5}
+
+# Alerting defaults
+alerting:
+  enabled: ${ALERTING_ENABLED:true}
+  check-interval-seconds: ${ALERT_CHECK_INTERVAL:30}
+  default-stuck-threshold: ${ALERT_STUCK_THRESHOLD:1000}
+  default-consumer-lag-threshold: ${ALERT_CONSUMER_LAG_THRESHOLD:5000}
+
+management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,87 @@
+# Default values for nats-monitor
+replicaCount: 1
+
+image:
+  repository: nats-monitor
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# NATS configuration - override with env vars
+nats:
+  monitoringUrl: "http://nats:8222"
+  pollIntervalSeconds: 5
+
+# Alerting configuration
+alerting:
+  enabled: true
+  checkIntervalSeconds: 30
+  stuckThreshold: 1000
+  consumerLagThreshold: 5000
+
+# SMTP configuration for email alerts
+smtp:
+  host: "smtp.gmail.com"
+  port: 587
+  username: ""
+  password: ""
+
+# Application server
+server:
+  port: 8080
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  hosts:
+    - host: nats-monitor.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: nats-monitor-tls
+  #    hosts:
+  #      - nats-monitor.local
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Persistence for H2 database (alert rules)
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce

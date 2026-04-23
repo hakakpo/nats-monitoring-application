@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Stream Detail')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3">
+            <a th:href="@{/streams}" class="btn-outline-custom"><i class="bi bi-arrow-left"></i></a>
+            <div>
+                <h1 th:text="${stream != null ? stream.name() : 'Stream Not Found'}">Stream</h1>
+                <p>Stream configuration and state details</p>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${stream == null}" class="empty-state">
+        <i class="bi bi-question-circle d-block"></i>
+        <p>Stream not found</p>
+    </div>
+
+    <div th:if="${stream != null}">
+        <!-- State -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon green"><i class="bi bi-envelope-fill"></i></div>
+                    <div class="metric-value" th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</div>
+                    <div class="metric-label">Total Messages</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon blue"><i class="bi bi-hdd"></i></div>
+                    <div class="metric-value" th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0</div>
+                    <div class="metric-label">Storage Used</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon yellow"><i class="bi bi-people"></i></div>
+                    <div class="metric-value" th:text="${stream.safeState().consumerCount()}">0</div>
+                    <div class="metric-label">Consumers</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="metric-card">
+                    <div class="metric-icon red"><i class="bi bi-trash"></i></div>
+                    <div class="metric-value" th:text="${stream.safeState().numDeleted()}">0</div>
+                    <div class="metric-label">Deleted</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config & Subjects -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-gear me-2"></i>Configuration</h5>
+                    </div>
+                    <div class="data-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-item-label">Retention</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Storage</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : '-'}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Replicas</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().numReplicas()}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Consumers</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().maxConsumers()}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Messages</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().maxMsgs()}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Discard Policy</div>
+                                <div class="info-item-value" th:text="${stream.safeConfig().discard() != null ? stream.safeConfig().discard() : '-'}">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-hash me-2"></i>Subjects</h5>
+                    </div>
+                    <div class="data-card-body">
+                        <div class="subject-list" th:if="${stream.safeConfig().subjects() != null && !stream.safeConfig().subjects().isEmpty()}">
+                            <span class="subject-tag" th:each="subject : ${stream.safeConfig().subjects()}" th:text="${subject}">subject</span>
+                        </div>
+                        <p th:if="${stream.safeConfig().subjects() == null || stream.safeConfig().subjects().isEmpty()}" class="text-muted">No subjects configured</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sequence Info -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-list-ol me-2"></i>Sequence Information</h5>
+                    </div>
+                    <div class="data-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-item-label">First Sequence</div>
+                                <div class="info-item-value" th:text="${stream.safeState().firstSeq()}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Last Sequence</div>
+                                <div class="info-item-value" th:text="${stream.safeState().lastSeq()}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">First Timestamp</div>
+                                <div class="info-item-value" style="font-size: 0.85rem;" th:text="${stream.safeState().firstTs() != null ? stream.safeState().firstTs() : 'N/A'}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Last Timestamp</div>
+                                <div class="info-item-value" style="font-size: 0.85rem;" th:text="${stream.safeState().lastTs() != null ? stream.safeState().lastTs() : 'N/A'}">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

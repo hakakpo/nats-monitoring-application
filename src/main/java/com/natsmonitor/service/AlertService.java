@@ -1,0 +1,272 @@
+package com.natsmonitor.service;
+
+import com.natsmonitor.dto.*;
+import com.natsmonitor.model.*;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+@Service
+public class AlertService {
+
+    private static final Logger log = LoggerFactory.getLogger(AlertService.class);
+
+    private final AlertRuleRepository alertRuleRepository;
+    private final AlertHistoryRepository alertHistoryRepository;
+    private final NatsMonitoringService natsService;
+    private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.username:nats-monitor@localhost}")
+    private String fromEmail;
+
+    public AlertService(AlertRuleRepository alertRuleRepository,
+                        AlertHistoryRepository alertHistoryRepository,
+                        NatsMonitoringService natsService,
+                        JavaMailSender mailSender) {
+        this.alertRuleRepository = alertRuleRepository;
+        this.alertHistoryRepository = alertHistoryRepository;
+        this.natsService = natsService;
+        this.mailSender = mailSender;
+    }
+
+    public List<AlertRule> getAllRules() {
+        return alertRuleRepository.findAll();
+    }
+
+    public AlertRule saveRule(AlertRule rule) {
+        validateRule(rule);
+        if (rule.getCreatedAt() == null) {
+            rule.setCreatedAt(LocalDateTime.now());
+        }
+        if (rule.getCooldownMinutes() <= 0) {
+            rule.setCooldownMinutes(15);
+        }
+        return alertRuleRepository.save(rule);
+    }
+
+    public void deleteRule(Long id) {
+        alertRuleRepository.deleteById(id);
+    }
+
+    public AlertRule toggleRule(Long id) {
+        return alertRuleRepository.findById(id).map(rule -> {
+            rule.setEnabled(!rule.isEnabled());
+            return alertRuleRepository.save(rule);
+        }).orElseThrow(() -> new NoSuchElementException("Alert rule not found: " + id));
+    }
+
+    public AlertRule toggleEmailEnabled(Long id) {
+        return alertRuleRepository.findById(id).map(rule -> {
+            rule.setEmailEnabled(!rule.isEmailEnabled());
+            return alertRuleRepository.save(rule);
+        }).orElseThrow(() -> new NoSuchElementException("Alert rule not found: " + id));
+    }
+
+    public List<AlertHistory> getRecentHistory(int limit) {
+        return alertHistoryRepository.findAllByOrderByTriggeredAtDesc(
+                org.springframework.data.domain.PageRequest.of(0, limit)).getContent();
+    }
+
+    public long getAlertCountLast24h() {
+        return alertHistoryRepository.countByTriggeredAtAfter(LocalDateTime.now().minusHours(24));
+    }
+
+    public void evaluateAllRules() {
+        List<AlertRule> enabledRules = alertRuleRepository.findByEnabledTrue();
+        for (AlertRule rule : enabledRules) {
+            try {
+                evaluateRule(rule);
+            } catch (Exception e) {
+                log.error("Error evaluating alert rule '{}': {}", rule.getName(), e.getMessage());
+            }
+        }
+    }
+
+    private void evaluateRule(AlertRule rule) {
+        long currentValue = getCurrentValueForRule(rule);
+        if (currentValue < 0) return; // Could not get value
+
+        if (currentValue >= rule.getThreshold()) {
+            if (shouldNotify(rule)) {
+                triggerAlert(rule, currentValue);
+            }
+        }
+    }
+
+    private long getCurrentValueForRule(AlertRule rule) {
+        return switch (rule.getType()) {
+            case STUCK_MESSAGES, STREAM_MESSAGE_COUNT -> getStreamMessageCount(rule.getStreamName());
+            case CONSUMER_LAG -> {
+                log.warn("Consumer lag alert '{}' is not supported by the current monitoring implementation", rule.getName());
+                yield -1; // Requires consumer-level API
+            }
+            case SLOW_CONSUMERS -> {
+                ServerInfo info = natsService.getServerInfo();
+                yield info != null ? info.slowConsumers() : -1;
+            }
+            case HIGH_MEMORY -> {
+                ServerInfo info = natsService.getServerInfo();
+                yield info != null ? info.mem() / (1024 * 1024) : -1; // MB
+            }
+            case HIGH_PENDING_ACKS -> {
+                log.warn("High pending ACKs alert '{}' is not supported by the current monitoring implementation", rule.getName());
+                yield -1;
+            }
+            case CONNECTION_COUNT -> {
+                ServerInfo info = natsService.getServerInfo();
+                yield info != null ? info.connections() : -1;
+            }
+        };
+    }
+
+    private long getStreamMessageCount(String streamName) {
+        StreamListResponse streams = natsService.getStreams();
+        if (streams == null || streams.streams() == null) {
+            return -1;
+        }
+
+        boolean hasStreamFilter = streamName != null && !streamName.isBlank();
+
+        return streams.streams().stream()
+                .filter(Objects::nonNull)
+                .filter(stream -> !hasStreamFilter || streamName.equals(stream.name()))
+                .map(StreamInfo::state)
+                .filter(Objects::nonNull)
+                .mapToLong(StreamInfo.StreamState::messages)
+                .reduce(hasStreamFilter ? -1 : 0, (left, right) -> left < 0 ? right : left + right);
+    }
+
+    private boolean shouldNotify(AlertRule rule) {
+        if (rule.getLastNotified() == null) return true;
+        return rule.getLastNotified()
+                .plusMinutes(rule.getCooldownMinutes())
+                .isBefore(LocalDateTime.now());
+    }
+
+    private void triggerAlert(AlertRule rule, long currentValue) {
+        String message = String.format(
+                "Alert: %s\nType: %s\nCurrent Value: %d\nThreshold: %d\nStream: %s\nConsumer: %s\nTime: %s",
+                rule.getName(), rule.getType(), currentValue, rule.getThreshold(),
+                rule.getStreamName() != null ? rule.getStreamName() : "N/A",
+                rule.getConsumerName() != null ? rule.getConsumerName() : "N/A",
+                LocalDateTime.now()
+        );
+
+        AlertHistory history = new AlertHistory();
+        history.setRuleName(rule.getName());
+        history.setAlertType(rule.getType());
+        history.setMessage(message);
+        history.setStreamName(rule.getStreamName());
+        history.setConsumerName(rule.getConsumerName());
+        history.setCurrentValue(currentValue);
+        history.setThreshold(rule.getThreshold());
+        history.setEmailSentTo(rule.getEmailRecipient());
+        history.setTriggeredAt(LocalDateTime.now());
+
+        boolean emailSent = sendAlertEmail(rule, currentValue);
+        history.setEmailSent(emailSent);
+        if (!rule.isEmailEnabled()) {
+            history.setErrorMessage("Email notification disabled for this rule");
+        } else if (!emailSent) {
+            history.setErrorMessage("Failed to send email notification");
+        }
+
+        alertHistoryRepository.save(history);
+
+        rule.setLastTriggered(LocalDateTime.now());
+        if (emailSent) {
+            rule.setLastNotified(LocalDateTime.now());
+        }
+        alertRuleRepository.save(rule);
+
+        log.warn("Alert triggered: {} (value={}, threshold={})", rule.getName(), currentValue, rule.getThreshold());
+    }
+
+    private boolean sendAlertEmail(AlertRule rule, long currentValue) {
+        if (!rule.isEmailEnabled()) {
+            log.info("Email sending disabled for rule '{}'", rule.getName());
+            return false;
+        }
+
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(resolveFromEmail());
+            helper.setTo(rule.getEmailRecipient());
+            helper.setSubject("[NATS Monitor Alert] " + rule.getName());
+            helper.setText(buildHtmlEmail(rule, currentValue), true);
+            mailSender.send(mimeMessage);
+            log.info("Alert email sent to {} for rule '{}'", rule.getEmailRecipient(), rule.getName());
+            return true;
+        } catch (MessagingException e) {
+            log.error("Failed to send alert email for rule '{}': {}", rule.getName(), e.getMessage());
+            return false;
+        } catch (Exception e) {
+            log.error("Unexpected error sending alert email: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private String resolveFromEmail() {
+        return (fromEmail == null || fromEmail.isBlank()) ? "nats-monitor@localhost" : fromEmail;
+    }
+
+    private String buildHtmlEmail(AlertRule rule, long currentValue) {
+        return """
+                <html>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4;">
+                <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="background: #dc3545; color: white; padding: 20px;">
+                        <h2 style="margin:0;">NATS Monitor Alert</h2>
+                    </div>
+                    <div style="padding: 20px;">
+                        <h3 style="color: #333;">%s</h3>
+                        <table style="width: 100%%; border-collapse: collapse;">
+                            <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Type</td><td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td></tr>
+                            <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Current Value</td><td style="padding: 8px; border-bottom: 1px solid #eee; color: #dc3545; font-weight: bold;">%d</td></tr>
+                            <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Threshold</td><td style="padding: 8px; border-bottom: 1px solid #eee;">%d</td></tr>
+                            <tr><td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold;">Stream</td><td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td></tr>
+                            <tr><td style="padding: 8px; font-weight: bold;">Consumer</td><td style="padding: 8px;">%s</td></tr>
+                        </table>
+                        <p style="color: #666; font-size: 12px; margin-top: 20px;">Sent by NATS Monitoring Application</p>
+                    </div>
+                </div>
+                </body>
+                </html>
+                """.formatted(
+                rule.getName(), rule.getType(),
+                currentValue, rule.getThreshold(),
+                rule.getStreamName() != null ? rule.getStreamName() : "All",
+                rule.getConsumerName() != null ? rule.getConsumerName() : "All"
+        );
+    }
+
+    private void validateRule(AlertRule rule) {
+        if (rule.getType() == null) {
+            throw new IllegalArgumentException("Alert type is required");
+        }
+        if (rule.getEmailRecipient() == null || rule.getEmailRecipient().isBlank()) {
+            throw new IllegalArgumentException("Email recipient is required");
+        }
+        if (!isSupportedType(rule.getType())) {
+            throw new IllegalArgumentException("Alert type '%s' is not supported yet".formatted(rule.getType()));
+        }
+    }
+
+    private boolean isSupportedType(AlertRule.AlertType type) {
+        return switch (type) {
+            case STUCK_MESSAGES, SLOW_CONSUMERS, HIGH_MEMORY, STREAM_MESSAGE_COUNT, CONNECTION_COUNT -> true;
+            case CONSUMER_LAG, HIGH_PENDING_ACKS -> false;
+        };
+    }
+}

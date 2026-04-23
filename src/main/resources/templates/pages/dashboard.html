@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Real-time NATS server monitoring</p>
+    </div>
+
+    <!-- Connection Alert -->
+    <div th:if="${!connected}" class="alert alert-danger d-flex align-items-center mb-4" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span>Unable to connect to NATS server at <strong th:text="${natsUrl}"></strong>. Please verify the server is running.</span>
+    </div>
+
+    <!-- Metric Cards -->
+    <div th:if="${connected}" class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon blue"><i class="bi bi-plug"></i></div>
+                <div class="metric-value" id="metricConnections" th:text="${serverInfo.connections()}">0</div>
+                <div class="metric-label">Active Connections</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon green"><i class="bi bi-envelope"></i></div>
+                <div class="metric-value" id="metricInMsgs" th:text="${#numbers.formatInteger(serverInfo.inMsgs(), 1, 'COMMA')}">0</div>
+                <div class="metric-label">Messages In</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon yellow"><i class="bi bi-send"></i></div>
+                <div class="metric-value" id="metricOutMsgs" th:text="${#numbers.formatInteger(serverInfo.outMsgs(), 1, 'COMMA')}">0</div>
+                <div class="metric-label">Messages Out</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="metric-value" id="metricSlowConsumers" th:text="${serverInfo.slowConsumers()}">0</div>
+                <div class="metric-label">Slow Consumers</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second row -->
+    <div th:if="${connected}" class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon purple"><i class="bi bi-cpu"></i></div>
+                <div class="metric-value" id="metricCpu" th:text="${#numbers.formatDecimal(serverInfo.cpu(), 1, 1)}">0</div>
+                <div class="metric-label">CPU %</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon blue"><i class="bi bi-memory"></i></div>
+                <div class="metric-value" id="metricMem" th:text="${formatBytes.formatBytes(serverInfo.mem())}">0</div>
+                <div class="metric-label">Memory</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon green"><i class="bi bi-hash"></i></div>
+                <div class="metric-value" id="metricSubs" th:text="${serverInfo.subscriptions()}">0</div>
+                <div class="metric-label">Subscriptions</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card">
+                <div class="metric-icon yellow"><i class="bi bi-bell"></i></div>
+                <div class="metric-value" th:text="${alertCount24h}">0</div>
+                <div class="metric-label">Alerts (24h)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div th:if="${connected}" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-graph-up me-2"></i>Message Rate</h5>
+                </div>
+                <div class="data-card-body">
+                    <div class="chart-container">
+                        <canvas id="messageRateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-bar-chart me-2"></i>Throughput (Bytes)</h5>
+                </div>
+                <div class="data-card-body">
+                    <div class="chart-container">
+                        <canvas id="byteRateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Info & JetStream -->
+    <div th:if="${connected}" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-server me-2"></i>Server Information</h5>
+                    <span class="badge-status healthy">v<span th:text="${serverInfo.version()}"></span></span>
+                </div>
+                <div class="data-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-item-label">Server Name</div>
+                            <div class="info-item-value truncatable" th:title="${serverInfo.serverName()}" th:text="${serverInfo.serverName()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Uptime</div>
+                            <div class="info-item-value" th:text="${serverInfo.uptime()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">JetStream</div>
+                            <div class="info-item-value" th:text="${serverInfo.jetstream() ? 'Enabled' : 'Disabled'}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Total Connections</div>
+                            <div class="info-item-value" th:text="${serverInfo.totalConnections()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Routes</div>
+                            <div class="info-item-value" th:text="${serverInfo.routes()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Leaf Nodes</div>
+                            <div class="info-item-value" th:text="${serverInfo.leafnodes()}">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6" th:if="${jsInfo != null}">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-lightning me-2"></i>JetStream</h5>
+                    <span class="badge-status info">Active</span>
+                </div>
+                <div class="data-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-item-label">Memory Used</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.memory())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Storage Used</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.storage())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Accounts</div>
+                            <div class="info-item-value" th:text="${jsInfo.accounts()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">API Total</div>
+                            <div class="info-item-value" th:text="${jsInfo.api() != null ? jsInfo.api().total() : 0}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">API Errors</div>
+                            <div class="info-item-value" th:text="${jsInfo.api() != null ? jsInfo.api().errors() : 0}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">HA Assets</div>
+                            <div class="info-item-value" th:text="${jsInfo.haAssets()}">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Streams Overview -->
+    <div th:if="${connected && streams != null && streams.streams() != null}" class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-collection me-2"></i>Streams Overview</h5>
+                    <span class="badge-status info" th:text="|${streams.total()} streams|">0 streams</span>
+                </div>
+                <div class="data-card-body p-0">
+                    <table class="table-dark-custom">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Messages</th>
+                            <th>Size</th>
+                            <th>Consumers</th>
+                            <th>Subjects</th>
+                            <th>Storage</th>
+                            <th>Retention</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="stream : ${streams.streams()}">
+                            <td>
+                                <a th:href="@{/streams/{name}(name=${stream.name()})}" style="color: var(--primary-light); text-decoration: none; font-weight: 500;" th:text="${stream.name()}">stream</a>
+                            </td>
+                            <td th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</td>
+                            <td th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0</td>
+                            <td th:text="${stream.safeState().consumerCount()}">0</td>
+                            <td th:text="${stream.safeState().numSubjects()}">0</td>
+                            <td>
+                                <span class="badge-status" th:classappend="${stream.safeConfig().storage() == 'file'} ? 'file' : 'memory'" th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : 'unknown'}">unknown</span>
+                            </td>
+                            <td th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">-</td>
+                            <td>
+                                <a th:href="@{/streams/{name}(name=${stream.name()})}" class="btn-outline-custom">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

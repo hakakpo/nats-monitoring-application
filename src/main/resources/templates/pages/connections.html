@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Connections')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <h1>Connections</h1>
+        <p>Active client connections to the NATS server</p>
+    </div>
+
+    <div th:if="${!connected}" class="empty-state">
+        <i class="bi bi-wifi-off d-block"></i>
+        <p>Not connected to NATS server</p>
+    </div>
+
+    <div th:if="${connected && connections != null}">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="metric-icon blue"><i class="bi bi-plug"></i></div>
+                    <div class="metric-value" th:text="${connections.numConnections()}">0</div>
+                    <div class="metric-label">Active Connections</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="metric-icon green"><i class="bi bi-arrow-repeat"></i></div>
+                    <div class="metric-value" th:text="${connections.total()}">0</div>
+                    <div class="metric-label">Total Connections</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="data-card-header">
+                <h5><i class="bi bi-plug me-2"></i>Connection Details</h5>
+            </div>
+            <div class="data-card-body p-0">
+                <div th:if="${connections.connections() == null || connections.connections().isEmpty()}" class="empty-state">
+                    <i class="bi bi-plug d-block"></i>
+                    <p>No active connections</p>
+                </div>
+                <table th:if="${connections.connections() != null && !connections.connections().isEmpty()}" class="table-dark-custom">
+                    <thead>
+                    <tr>
+                        <th>CID</th>
+                        <th>Name</th>
+                        <th>IP</th>
+                        <th>Lang</th>
+                        <th>Version</th>
+                        <th>Subscriptions</th>
+                        <th>Msgs In</th>
+                        <th>Msgs Out</th>
+                        <th>Uptime</th>
+                        <th>RTT</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="conn : ${connections.connections()}">
+                        <td th:text="${conn.cid()}">0</td>
+                        <td th:text="${conn.name() != null ? conn.name() : '-'}" style="font-family: monospace;">-</td>
+                        <td th:text="${conn.ip()}">-</td>
+                        <td th:text="${conn.lang() != null ? conn.lang() : '-'}">-</td>
+                        <td th:text="${conn.version() != null ? conn.version() : '-'}">-</td>
+                        <td th:text="${conn.subscriptions()}">0</td>
+                        <td th:text="${#numbers.formatInteger(conn.inMsgs(), 1, 'COMMA')}">0</td>
+                        <td th:text="${#numbers.formatInteger(conn.outMsgs(), 1, 'COMMA')}">0</td>
+                        <td th:text="${conn.uptime() != null ? conn.uptime() : '-'}">-</td>
+                        <td th:text="${conn.rtt() != null ? conn.rtt() : '-'}">-</td>
+                        <td>
+                            <span class="badge-status" th:classappend="${conn.slowConsumer()} ? 'warning' : 'healthy'" th:text="${conn.slowConsumer()} ? 'Slow' : 'OK'">OK</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

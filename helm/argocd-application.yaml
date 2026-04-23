@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nats-monitor
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/nats-monitoring-application.git
+    targetRevision: main
+    path: helm/nats-monitor
+    helm:
+      valueFiles:
+        - values.yaml
+      # Override values per environment
+      parameters:
+        - name: image.repository
+          value: your-registry.io/nats-monitor
+        - name: image.tag
+          value: latest
+        - name: nats.monitoringUrl
+          value: http://nats:8222
+        - name: ingress.hosts[0].host
+          value: nats-monitor.your-domain.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nats
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
