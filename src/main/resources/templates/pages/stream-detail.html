@@ -7,7 +7,7 @@
 <main class="main-content">
     <div class="page-header">
         <div class="d-flex align-items-center gap-3">
-            <a th:href="@{/streams}" class="btn-outline-custom"><i class="bi bi-arrow-left"></i></a>
+            <a class="btn-outline-custom" th:href="@{/streams}"><i class="bi bi-arrow-left"></i></a>
             <div>
                 <h1 th:text="${stream != null ? stream.name() : 'Stream Not Found'}">Stream</h1>
                 <p>Stream configuration and state details</p>
@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <div th:if="${stream == null}" class="empty-state">
+    <div class="empty-state" th:if="${stream == null}">
         <i class="bi bi-question-circle d-block"></i>
         <p>Stream not found</p>
     </div>
@@ -26,7 +26,9 @@
             <div class="col-md-3 col-sm-6">
                 <div class="metric-card">
                     <div class="metric-icon green"><i class="bi bi-envelope-fill"></i></div>
-                    <div class="metric-value" th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</div>
+                    <div class="metric-value"
+                         th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0
+                    </div>
                     <div class="metric-label">Total Messages</div>
                 </div>
             </div>
@@ -64,11 +66,17 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <div class="info-item-label">Retention</div>
-                                <div class="info-item-value" th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">
+                                    -
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Storage</div>
-                                <div class="info-item-value" th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : '-'}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : '-'}">
+                                    -
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Replicas</div>
@@ -84,7 +92,10 @@
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Discard Policy</div>
-                                <div class="info-item-value" th:text="${stream.safeConfig().discard() != null ? stream.safeConfig().discard() : '-'}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().discard() != null ? stream.safeConfig().discard() : '-'}">
+                                    -
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -96,10 +107,13 @@
                         <h5><i class="bi bi-hash me-2"></i>Subjects</h5>
                     </div>
                     <div class="data-card-body">
-                        <div class="subject-list" th:if="${stream.safeConfig().subjects() != null && !stream.safeConfig().subjects().isEmpty()}">
-                            <span class="subject-tag" th:each="subject : ${stream.safeConfig().subjects()}" th:text="${subject}">subject</span>
+                        <div class="subject-list"
+                             th:if="${stream.safeConfig().subjects() != null && !stream.safeConfig().subjects().isEmpty()}">
+                            <span class="subject-tag" th:each="subject : ${stream.safeConfig().subjects()}"
+                                  th:text="${subject}">subject</span>
                         </div>
-                        <p th:if="${stream.safeConfig().subjects() == null || stream.safeConfig().subjects().isEmpty()}" class="text-muted">No subjects configured</p>
+                        <p class="text-muted"
+                           th:if="${stream.safeConfig().subjects() == null || stream.safeConfig().subjects().isEmpty()}">No subjects configured</p>
                     </div>
                 </div>
             </div>
@@ -124,11 +138,17 @@
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">First Timestamp</div>
-                                <div class="info-item-value" style="font-size: 0.85rem;" th:text="${stream.safeState().firstTs() != null ? stream.safeState().firstTs() : 'N/A'}">-</div>
+                                <div class="info-item-value" style="font-size: 0.85rem;"
+                                     th:text="${stream.safeState().firstTs() != null ? stream.safeState().firstTs() : 'N/A'}">
+                                    -
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Last Timestamp</div>
-                                <div class="info-item-value" style="font-size: 0.85rem;" th:text="${stream.safeState().lastTs() != null ? stream.safeState().lastTs() : 'N/A'}">-</div>
+                                <div class="info-item-value" style="font-size: 0.85rem;"
+                                     th:text="${stream.safeState().lastTs() != null ? stream.safeState().lastTs() : 'N/A'}">
+                                    -
+                                </div>
                             </div>
                         </div>
                     </div>

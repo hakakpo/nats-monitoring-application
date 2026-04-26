@@ -10,7 +10,7 @@
         <p>Client connections, cluster routes and subscriptions</p>
     </div>
 
-    <div th:if="${!connected}" class="empty-state">
+    <div class="empty-state" th:if="${!connected}">
         <i class="bi bi-wifi-off d-block"></i>
         <p>Not connected to NATS server</p>
     </div>
@@ -22,7 +22,8 @@
             <div class="col-md-3 col-sm-6">
                 <div class="metric-card">
                     <div class="metric-icon blue"><i class="bi bi-plug"></i></div>
-                    <div class="metric-value" th:text="${connections != null ? connections.numConnections() : 0}">0</div>
+                    <div class="metric-value" th:text="${connections != null ? connections.numConnections() : 0}">0
+                    </div>
                     <div class="metric-label">Active Connections</div>
                 </div>
             </div>
@@ -50,7 +51,7 @@
         </div>
 
         <!-- Subscriptions Details -->
-        <div th:if="${subsz != null}" class="row g-3 mb-4">
+        <div class="row g-3 mb-4" th:if="${subsz != null}">
             <div class="col-12">
                 <div class="data-card">
                     <div class="data-card-header">
@@ -61,27 +62,39 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <div class="info-item-label">Total Subscriptions</div>
-                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numSubscriptions(), 1, 'COMMA')}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(subsz.numSubscriptions(), 1, 'COMMA')}">0
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Cache Size</div>
-                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numCache(), 1, 'COMMA')}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(subsz.numCache(), 1, 'COMMA')}">0
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Cache Hit Rate</div>
-                                <div class="info-item-value" th:text="${#numbers.formatDecimal(subsz.cacheHitRate() * 100, 1, 1) + '%'}">0%</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatDecimal(subsz.cacheHitRate() * 100, 1, 1) + '%'}">0%
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Inserts</div>
-                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numInserts(), 1, 'COMMA')}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(subsz.numInserts(), 1, 'COMMA')}">0
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Removes</div>
-                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numRemoves(), 1, 'COMMA')}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(subsz.numRemoves(), 1, 'COMMA')}">0
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Matches</div>
-                                <div class="info-item-value" th:text="${#numbers.formatInteger(subsz.numMatches(), 1, 'COMMA')}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(subsz.numMatches(), 1, 'COMMA')}">0
+                                </div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Max Fanout</div>
@@ -89,7 +102,9 @@
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Avg Fanout</div>
-                                <div class="info-item-value" th:text="${#numbers.formatDecimal(subsz.avgFanout(), 1, 2)}">0</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatDecimal(subsz.avgFanout(), 1, 2)}">0
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -98,7 +113,7 @@
         </div>
 
         <!-- Cluster Routes -->
-        <div th:if="${routez != null && routez.routes() != null && !routez.routes().isEmpty()}" class="row g-3 mb-4">
+        <div class="row g-3 mb-4" th:if="${routez != null && routez.routes() != null && !routez.routes().isEmpty()}">
             <div class="col-12">
                 <div class="data-card">
                     <div class="data-card-header">
@@ -124,17 +139,22 @@
                             <tr th:each="route : ${routez.routes()}">
                                 <td th:text="${route.rid()}">0</td>
                                 <td>
-                                    <span class="truncatable" style="max-width: 120px; display: inline-block; vertical-align: middle;" th:title="${route.remoteId()}" th:text="${route.remoteId()}">-</span>
+                                    <span class="truncatable"
+                                          style="max-width: 120px; display: inline-block; vertical-align: middle;"
+                                          th:text="${route.remoteId()}" th:title="${route.remoteId()}">-</span>
                                 </td>
                                 <td th:text="${route.ip()}">-</td>
                                 <td th:text="${route.port()}">0</td>
                                 <td>
-                                    <span class="badge-status" th:classappend="${route.didSolicit()} ? 'info' : 'healthy'" th:text="${route.didSolicit()} ? 'Solicited' : 'Accepted'">-</span>
+                                    <span class="badge-status"
+                                          th:classappend="${route.didSolicit()} ? 'info' : 'healthy'"
+                                          th:text="${route.didSolicit()} ? 'Solicited' : 'Accepted'">-</span>
                                 </td>
                                 <td th:text="${#numbers.formatInteger(route.inMsgs(), 1, 'COMMA')}">0</td>
                                 <td th:text="${#numbers.formatInteger(route.outMsgs(), 1, 'COMMA')}">0</td>
                                 <td>
-                                    <span th:class="${route.pendingSize() > 0 ? 'badge-status warning' : ''}" th:text="${route.pendingSize()}">0</span>
+                                    <span th:class="${route.pendingSize() > 0 ? 'badge-status warning' : ''}"
+                                          th:text="${route.pendingSize()}">0</span>
                                 </td>
                                 <td th:text="${route.subscriptions()}">0</td>
                             </tr>
@@ -146,17 +166,19 @@
         </div>
 
         <!-- Connection Details -->
-        <div th:if="${connections != null}" class="data-card">
+        <div class="data-card" th:if="${connections != null}">
             <div class="data-card-header">
                 <h5><i class="bi bi-plug me-2"></i>Connection Details</h5>
                 <span class="badge-status info" th:text="|${connections.numConnections()} active|">0</span>
             </div>
             <div class="data-card-body p-0">
-                <div th:if="${connections.connections() == null || connections.connections().isEmpty()}" class="empty-state">
+                <div class="empty-state"
+                     th:if="${connections.connections() == null || connections.connections().isEmpty()}">
                     <i class="bi bi-plug d-block"></i>
                     <p>No active connections</p>
                 </div>
-                <table th:if="${connections.connections() != null && !connections.connections().isEmpty()}" class="table-dark-custom">
+                <table class="table-dark-custom"
+                       th:if="${connections.connections() != null && !connections.connections().isEmpty()}">
                     <thead>
                     <tr>
                         <th>CID</th>
@@ -176,7 +198,10 @@
                     <tr th:each="conn : ${connections.connections()}">
                         <td th:text="${conn.cid()}">0</td>
                         <td>
-                            <span class="truncatable" style="max-width: 150px; display: inline-block; vertical-align: middle; font-family: monospace;" th:title="${conn.name()}" th:text="${conn.name() != null ? conn.name() : '-'}">-</span>
+                            <span class="truncatable"
+                                  style="max-width: 150px; display: inline-block; vertical-align: middle; font-family: monospace;"
+                                  th:text="${conn.name() != null ? conn.name() : '-'}"
+                                  th:title="${conn.name()}">-</span>
                         </td>
                         <td th:text="${conn.ip()}">-</td>
                         <td th:text="${conn.lang() != null ? conn.lang() : '-'}">-</td>
@@ -187,7 +212,8 @@
                         <td th:text="${conn.uptime() != null ? conn.uptime() : '-'}">-</td>
                         <td th:text="${conn.rtt() != null ? conn.rtt() : '-'}">-</td>
                         <td>
-                            <span class="badge-status" th:classappend="${conn.slowConsumer()} ? 'warning' : 'healthy'" th:text="${conn.slowConsumer()} ? 'Slow' : 'OK'">OK</span>
+                            <span class="badge-status" th:classappend="${conn.slowConsumer()} ? 'warning' : 'healthy'"
+                                  th:text="${conn.slowConsumer()} ? 'Slow' : 'OK'">OK</span>
                         </td>
                     </tr>
                     </tbody>

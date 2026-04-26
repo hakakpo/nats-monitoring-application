@@ -10,7 +10,7 @@
             <h1>Alerts</h1>
             <p>Configure alert rules and view alert history</p>
         </div>
-        <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+        <button class="btn btn-primary-custom" data-bs-target="#addRuleModal" data-bs-toggle="modal">
             <i class="bi bi-plus-lg me-1"></i>Add Rule
         </button>
     </div>
@@ -22,34 +22,41 @@
             <span class="badge-status info" th:text="|${#lists.size(rules)} rules|">0 rules</span>
         </div>
         <div class="data-card-body">
-            <div th:if="${#lists.isEmpty(rules)}" class="empty-state">
+            <div class="empty-state" th:if="${#lists.isEmpty(rules)}">
                 <i class="bi bi-bell-slash d-block"></i>
                 <p>No alert rules configured. Click "Add Rule" to create one.</p>
             </div>
 
-            <div th:each="rule : ${rules}" class="alert-rule-card" th:classappend="${!rule.enabled} ? 'disabled'">
+            <div class="alert-rule-card" th:classappend="${!rule.enabled} ? 'disabled'" th:each="rule : ${rules}">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
                         <h6 class="mb-1" th:text="${rule.name}">Rule Name</h6>
                         <div class="d-flex gap-2 flex-wrap">
                             <span class="badge-status info" th:text="${rule.type}">TYPE</span>
-                            <span class="badge-status warning" th:if="${rule.streamName != null && !rule.streamName.isBlank()}" th:text="|Stream: ${rule.streamName}|">Stream</span>
+                            <span class="badge-status warning"
+                                  th:if="${rule.streamName != null && !rule.streamName.isBlank()}"
+                                  th:text="|Stream: ${rule.streamName}|">Stream</span>
                             <span class="badge-status danger" th:text="|Threshold: ${rule.threshold}|">Threshold</span>
-                            <span class="badge-status" th:classappend="${rule.emailEnabled} ? 'healthy' : 'warning'" th:text="${rule.emailEnabled} ? 'Email ON' : 'Email OFF'">Email ON</span>
+                            <span class="badge-status" th:classappend="${rule.emailEnabled} ? 'healthy' : 'warning'"
+                                  th:text="${rule.emailEnabled} ? 'Email ON' : 'Email OFF'">Email ON</span>
                         </div>
                         <div class="mt-2" style="font-size: 0.85rem; color: var(--text-muted);">
                             <i class="bi bi-envelope me-1"></i><span th:text="${rule.emailRecipient}">email</span>
-                            <span class="ms-3"><i class="bi bi-clock me-1"></i>Cooldown: <span th:text="${rule.cooldownMinutes}">15</span>min</span>
+                            <span class="ms-3"><i class="bi bi-clock me-1"></i>Cooldown: <span
+                                    th:text="${rule.cooldownMinutes}">15</span>min</span>
                         </div>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn-outline-custom" th:onclick="|toggleEmailDelivery(${rule.id})|" th:title="${rule.emailEnabled} ? 'Disable email sending' : 'Enable email sending'">
-                            <i class="bi" th:classappend="${rule.emailEnabled} ? 'bi-envelope-check' : 'bi-envelope-slash'"></i>
+                        <button class="btn-outline-custom" th:onclick="|toggleEmailDelivery(${rule.id})|"
+                                th:title="${rule.emailEnabled} ? 'Disable email sending' : 'Enable email sending'">
+                            <i class="bi"
+                               th:classappend="${rule.emailEnabled} ? 'bi-envelope-check' : 'bi-envelope-slash'"></i>
                         </button>
                         <button class="btn-outline-custom" th:onclick="|toggleRule(${rule.id})|">
                             <i class="bi" th:classappend="${rule.enabled} ? 'bi-pause' : 'bi-play'"></i>
                         </button>
-                        <button class="btn-outline-custom" style="color: var(--danger);" th:onclick="|deleteRule(${rule.id})|">
+                        <button class="btn-outline-custom" style="color: var(--danger);"
+                                th:onclick="|deleteRule(${rule.id})|">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -64,11 +71,11 @@
             <h5><i class="bi bi-clock-history me-2"></i>Alert History</h5>
         </div>
         <div class="data-card-body p-0">
-            <div th:if="${#lists.isEmpty(history)}" class="empty-state">
+            <div class="empty-state" th:if="${#lists.isEmpty(history)}">
                 <i class="bi bi-check-circle d-block"></i>
                 <p>No alerts triggered yet</p>
             </div>
-            <table th:if="${!#lists.isEmpty(history)}" class="table-dark-custom">
+            <table class="table-dark-custom" th:if="${!#lists.isEmpty(history)}">
                 <thead>
                 <tr>
                     <th>Time</th>
@@ -81,13 +88,16 @@
                 </thead>
                 <tbody>
                 <tr th:each="h : ${history}">
-                    <td th:text="${#temporals.format(h.triggeredAt, 'yyyy-MM-dd HH:mm:ss')}" style="font-size: 0.8rem;">-</td>
+                    <td style="font-size: 0.8rem;" th:text="${#temporals.format(h.triggeredAt, 'yyyy-MM-dd HH:mm:ss')}">
+                        -
+                    </td>
                     <td th:text="${h.ruleName}">-</td>
                     <td><span class="badge-status warning" th:text="${h.alertType}">TYPE</span></td>
                     <td style="color: var(--danger); font-weight: 600;" th:text="${h.currentValue}">0</td>
                     <td th:text="${h.threshold}">0</td>
                     <td>
-                        <i class="bi" th:classappend="${h.emailSent} ? 'bi-check-circle text-success' : 'bi-x-circle text-danger'"></i>
+                        <i class="bi"
+                           th:classappend="${h.emailSent} ? 'bi-check-circle text-success' : 'bi-x-circle text-danger'"></i>
                     </td>
                 </tr>
                 </tbody>
@@ -102,13 +112,14 @@
         <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
             <div class="modal-header" style="border-bottom-color: var(--border);">
                 <h5 class="modal-title">Add Alert Rule</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body">
                 <form id="addRuleForm">
                     <div class="mb-3">
                         <label class="form-label">Rule Name</label>
-                        <input type="text" class="form-control" id="ruleName" required placeholder="e.g. High message count on ORDERS">
+                        <input class="form-control" id="ruleName" placeholder="e.g. High message count on ORDERS" required
+                               type="text">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Alert Type</label>
@@ -122,29 +133,33 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Stream Name (optional)</label>
-                        <input type="text" class="form-control" id="ruleStream" placeholder="Leave blank for all streams">
+                        <input class="form-control" id="ruleStream" placeholder="Leave blank for all streams"
+                               type="text">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Threshold</label>
-                        <input type="number" class="form-control" id="ruleThreshold" required min="1" placeholder="1000">
+                        <input class="form-control" id="ruleThreshold" min="1" placeholder="1000" required
+                               type="number">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email Recipient</label>
-                        <input type="email" class="form-control" id="ruleEmail" required placeholder="alerts@company.com">
+                        <input class="form-control" id="ruleEmail" placeholder="alerts@company.com" required
+                               type="email">
                     </div>
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="ruleEmailEnabled" checked>
-                        <label class="form-check-label" for="ruleEmailEnabled">Enable email sending for this rule</label>
+                        <input checked class="form-check-input" id="ruleEmailEnabled" type="checkbox">
+                        <label class="form-check-label" for="ruleEmailEnabled">Enable email sending for this
+                            rule</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cooldown (minutes)</label>
-                        <input type="number" class="form-control" id="ruleCooldown" value="15" min="1">
+                        <input class="form-control" id="ruleCooldown" min="1" type="number" value="15">
                     </div>
                 </form>
             </div>
             <div class="modal-footer" style="border-top-color: var(--border);">
-                <button type="button" class="btn-outline-custom" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary-custom" onclick="createRule()">Create Rule</button>
+                <button class="btn-outline-custom" data-bs-dismiss="modal" type="button">Cancel</button>
+                <button class="btn btn-primary-custom" onclick="createRule()" type="button">Create Rule</button>
             </div>
         </div>
     </div>

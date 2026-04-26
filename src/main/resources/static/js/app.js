@@ -1,5 +1,5 @@
 // NATS Monitor - Frontend Application
-(function() {
+(function () {
     'use strict';
 
     // --- WebSocket Connection ---
@@ -26,15 +26,15 @@
         stompClient = Stomp.over(socket);
         stompClient.debug = null; // Disable debug logs
 
-        stompClient.connect({}, function() {
+        stompClient.connect({}, function () {
             isConnecting = false;
             clearReconnectTimer();
             console.log('WebSocket connected');
-            stompClient.subscribe('/topic/metrics', function(message) {
+            stompClient.subscribe('/topic/metrics', function (message) {
                 const data = JSON.parse(message.body);
                 updateDashboard(data);
             });
-        }, function(error) {
+        }, function (error) {
             isConnecting = false;
             console.log('WebSocket error, retrying in 5s...', error);
             setDisconnectedState();
@@ -97,7 +97,7 @@
     }
 
     function readErrorMessage(response) {
-        return response.text().then(function(text) {
+        return response.text().then(function (text) {
             if (!text) {
                 return response.statusText || 'Unknown error';
             }
@@ -131,12 +131,12 @@
         const toggle = document.getElementById('themeToggle');
         if (!toggle) return;
 
-        toggle.addEventListener('click', function() {
+        toggle.addEventListener('click', function () {
             var next = getActiveTheme() === 'dark' ? 'light' : 'dark';
             applyTheme(next);
         });
 
-        toggle.addEventListener('keydown', function(e) {
+        toggle.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 toggle.click();
@@ -212,26 +212,26 @@
         return {
             responsive: true,
             maintainAspectRatio: false,
-            animation: { duration: 300 },
+            animation: {duration: 300},
             scales: {
                 x: {
                     display: false,
-                    grid: { display: false }
+                    grid: {display: false}
                 },
                 y: {
                     beginAtZero: true,
-                    grid: { color: gridColor },
-                    ticks: { color: tickColor, font: { size: 11 } }
+                    grid: {color: gridColor},
+                    ticks: {color: tickColor, font: {size: 11}}
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: legendColor, usePointStyle: true, padding: 15 }
+                    labels: {color: legendColor, usePointStyle: true, padding: 15}
                 }
             },
             elements: {
-                line: { tension: 0.3, borderWidth: 2 },
-                point: { radius: 0, hitRadius: 10 }
+                line: {tension: 0.3, borderWidth: 2},
+                point: {radius: 0, hitRadius: 10}
             }
         };
     }
@@ -281,14 +281,14 @@
 
     function scheduleReconnect() {
         if (reconnectTimer) return;
-        reconnectTimer = setTimeout(function() {
+        reconnectTimer = setTimeout(function () {
             reconnectTimer = null;
             connectWebSocket();
         }, 5000);
     }
 
     // --- Alert Rule Functions ---
-    window.createRule = function() {
+    window.createRule = function () {
         const rule = {
             name: document.getElementById('ruleName').value,
             type: document.getElementById('ruleType').value,
@@ -302,7 +302,7 @@
 
         fetch('/api/alerts/rules', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(rule)
         }).then(res => {
             if (res.ok) {
@@ -313,8 +313,8 @@
         }).catch(err => alert('Error: ' + err.message));
     };
 
-    window.toggleRule = function(id) {
-        fetch('/api/alerts/rules/' + id + '/toggle', { method: 'POST' })
+    window.toggleRule = function (id) {
+        fetch('/api/alerts/rules/' + id + '/toggle', {method: 'POST'})
             .then(res => {
                 if (res.ok) {
                     location.reload();
@@ -325,8 +325,8 @@
             .catch(err => alert('Error: ' + err.message));
     };
 
-    window.toggleEmailDelivery = function(id) {
-        fetch('/api/alerts/rules/' + id + '/toggle-email', { method: 'POST' })
+    window.toggleEmailDelivery = function (id) {
+        fetch('/api/alerts/rules/' + id + '/toggle-email', {method: 'POST'})
             .then(res => {
                 if (res.ok) {
                     location.reload();
@@ -337,9 +337,9 @@
             .catch(err => alert('Error: ' + err.message));
     };
 
-    window.deleteRule = function(id) {
+    window.deleteRule = function (id) {
         if (confirm('Are you sure you want to delete this alert rule?')) {
-            fetch('/api/alerts/rules/' + id, { method: 'DELETE' })
+            fetch('/api/alerts/rules/' + id, {method: 'DELETE'})
                 .then(res => {
                     if (res.ok) {
                         location.reload();
@@ -352,13 +352,13 @@
     };
 
     // --- Initialize ---
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         initThemeToggle();
         initCharts();
         connectWebSocket();
     });
 
-    window.addEventListener('beforeunload', function() {
+    window.addEventListener('beforeunload', function () {
         clearReconnectTimer();
         if (stompClient && stompClient.connected) {
             stompClient.disconnect();

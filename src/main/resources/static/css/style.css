@@ -26,7 +26,11 @@
     --border-soft: rgba(148, 163, 184, 0.35);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -60,7 +64,9 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-.sidebar-brand i { font-size: 1.5rem; }
+.sidebar-brand i {
+    font-size: 1.5rem;
+}
 
 .sidebar-nav {
     list-style: none;
@@ -158,7 +164,9 @@ body {
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
-.status-dot.disconnected { background: var(--danger); }
+.status-dot.disconnected {
+    background: var(--danger);
+}
 
 /* Main content */
 .main-content {
@@ -208,11 +216,30 @@ body {
     margin-bottom: 1rem;
 }
 
-.metric-card .metric-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--info); }
-.metric-card .metric-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-.metric-card .metric-icon.yellow { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-.metric-card .metric-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-.metric-card .metric-icon.purple { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); }
+.metric-card .metric-icon.blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info);
+}
+
+.metric-card .metric-icon.green {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+}
+
+.metric-card .metric-icon.yellow {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.metric-card .metric-icon.red {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.metric-card .metric-icon.purple {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary-light);
+}
 
 .metric-value {
     font-size: 2rem;
@@ -250,7 +277,9 @@ body {
     margin: 0;
 }
 
-.data-card-body { padding: 1.5rem; }
+.data-card-body {
+    padding: 1.5rem;
+}
 
 /* Tables */
 .table-dark-custom {
@@ -290,12 +319,35 @@ body {
     font-weight: 600;
 }
 
-.badge-status.healthy { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-.badge-status.warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-.badge-status.danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-.badge-status.info { background: rgba(59, 130, 246, 0.15); color: var(--info); }
-.badge-status.memory { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-.badge-status.file { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+.badge-status.healthy {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+}
+
+.badge-status.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.badge-status.danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.badge-status.info {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info);
+}
+
+.badge-status.memory {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.badge-status.file {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success);
+}
 
 /* Charts */
 .chart-container {
@@ -453,9 +505,17 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .sidebar { width: 60px; }
+    .sidebar {
+        width: 60px;
+    }
+
     .sidebar-brand span,
     .sidebar-nav li a span,
-    .sidebar-footer span { display: none; }
-    .main-content { margin-left: 60px; }
+    .sidebar-footer span {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 60px;
+    }
 }

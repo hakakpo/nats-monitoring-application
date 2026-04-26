@@ -10,32 +10,39 @@
         <p>JetStream streams and their current state</p>
     </div>
 
-    <div th:if="${!connected}" class="empty-state">
+    <div class="empty-state" th:if="${!connected}">
         <i class="bi bi-wifi-off d-block"></i>
         <p>Not connected to NATS server</p>
     </div>
 
-    <div th:if="${connected && (streams == null || streams.streams() == null || streams.streams().isEmpty())}" class="empty-state">
+    <div class="empty-state"
+         th:if="${connected && (streams == null || streams.streams() == null || streams.streams().isEmpty())}">
         <i class="bi bi-collection d-block"></i>
         <p>No streams found</p>
     </div>
 
-    <div th:if="${connected && streams != null && streams.streams() != null}" class="row g-3">
+    <div class="row g-3" th:if="${connected && streams != null && streams.streams() != null}">
         <div class="col-md-6 col-lg-4" th:each="stream : ${streams.streams()}">
             <div class="data-card">
                 <div class="data-card-header">
                     <h5 style="font-family: 'JetBrains Mono', monospace;" th:text="${stream.name()}">Stream</h5>
-                    <span class="badge-status" th:classappend="${stream.safeConfig().storage() == 'file'} ? 'file' : 'memory'" th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : 'unknown'}">unknown</span>
+                    <span class="badge-status"
+                          th:classappend="${stream.safeConfig().storage() == 'file'} ? 'file' : 'memory'"
+                          th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : 'unknown'}">unknown</span>
                 </div>
                 <div class="data-card-body">
                     <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
                         <div class="info-item">
                             <div class="info-item-label">Messages</div>
-                            <div class="info-item-value" th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</div>
+                            <div class="info-item-value"
+                                 th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0
+                            </div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">Size</div>
-                            <div class="info-item-value" th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0</div>
+                            <div class="info-item-value"
+                                 th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0
+                            </div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">Consumers</div>
@@ -55,7 +62,7 @@
                         </div>
                     </div>
                     <div class="mt-3 text-end">
-                        <a th:href="@{/streams/{name}(name=${stream.name()})}" class="btn-outline-custom">
+                        <a class="btn-outline-custom" th:href="@{/streams/{name}(name=${stream.name()})}">
                             <i class="bi bi-eye me-1"></i>Details
                         </a>
                     </div>
