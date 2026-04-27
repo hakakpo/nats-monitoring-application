@@ -17,6 +17,8 @@ import java.util.NoSuchElementException;
 @RequestMapping("/api")
 public class ApiController {
 
+    private static final String MESSAGE_KEY = "message";
+
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
 
@@ -114,12 +116,13 @@ public class ApiController {
     }
 
     @PostMapping("/alerts/rules")
-    public ResponseEntity<AlertRule> createRule(@Valid @RequestBody AlertRule rule) {
-        return ResponseEntity.ok(alertService.saveRule(rule));
+    public ResponseEntity<AlertRule> createRule(@Valid @RequestBody AlertRuleRequest request) {
+        return ResponseEntity.ok(alertService.saveRule(request.toEntity()));
     }
 
     @PutMapping("/alerts/rules/{id}")
-    public ResponseEntity<AlertRule> updateRule(@PathVariable Long id, @Valid @RequestBody AlertRule rule) {
+    public ResponseEntity<AlertRule> updateRule(@PathVariable Long id, @Valid @RequestBody AlertRuleRequest request) {
+        AlertRule rule = request.toEntity();
         rule.setId(id);
         return ResponseEntity.ok(alertService.saveRule(rule));
     }
@@ -147,11 +150,11 @@ public class ApiController {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        return ResponseEntity.badRequest().body(Map.of(MESSAGE_KEY, ex.getMessage()));
     }
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(NoSuchElementException ex) {
-        return ResponseEntity.status(404).body(Map.of("message", ex.getMessage()));
+        return ResponseEntity.status(404).body(Map.of(MESSAGE_KEY, ex.getMessage()));
     }
 }

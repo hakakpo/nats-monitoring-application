@@ -21,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NatsMonitoringService {
 
     private static final Logger log = LoggerFactory.getLogger(NatsMonitoringService.class);
+    private static final String IN_RATE = "inRate";
+    private static final String OUT_RATE = "outRate";
 
     private final RestClient restClient;
     private final NatsMonitoringConfig config;
@@ -40,10 +42,10 @@ public class NatsMonitoringService {
         this.restClient = RestClient.builder()
                 .baseUrl(config.getUrl())
                 .build();
-        messageRateHistory.put("inRate", new ArrayList<>());
-        messageRateHistory.put("outRate", new ArrayList<>());
-        byteRateHistory.put("inRate", new ArrayList<>());
-        byteRateHistory.put("outRate", new ArrayList<>());
+        messageRateHistory.put(IN_RATE, new ArrayList<>());
+        messageRateHistory.put(OUT_RATE, new ArrayList<>());
+        byteRateHistory.put(IN_RATE, new ArrayList<>());
+        byteRateHistory.put(OUT_RATE, new ArrayList<>());
     }
 
     public ServerInfo getServerInfo() {
@@ -247,10 +249,10 @@ public class NatsMonitoringService {
         long outByteRate = info.outBytes() - lastOutBytes;
 
         if (lastInMsgs > 0) {
-            addToHistory(messageRateHistory.get("inRate"), Math.max(0, inMsgRate));
-            addToHistory(messageRateHistory.get("outRate"), Math.max(0, outMsgRate));
-            addToHistory(byteRateHistory.get("inRate"), Math.max(0, inByteRate));
-            addToHistory(byteRateHistory.get("outRate"), Math.max(0, outByteRate));
+            addToHistory(messageRateHistory.get(IN_RATE), Math.max(0, inMsgRate));
+            addToHistory(messageRateHistory.get(OUT_RATE), Math.max(0, outMsgRate));
+            addToHistory(byteRateHistory.get(IN_RATE), Math.max(0, inByteRate));
+            addToHistory(byteRateHistory.get(OUT_RATE), Math.max(0, outByteRate));
         }
 
         lastInMsgs = info.inMsgs();

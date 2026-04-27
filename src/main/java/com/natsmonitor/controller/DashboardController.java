@@ -12,6 +12,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class DashboardController {
 
+    private static final String ATTR_CONNECTED = "connected";
+    private static final String ATTR_FORMAT_BYTES = "formatBytes";
+    private static final String ATTR_ACTIVE_PAGE = "activePage";
+    private static final String ATTR_STREAMS = "streams";
+    private static final String ATTR_CONNECTIONS = "connections";
+    private static final String ATTR_SUBSZ = "subsz";
+    private static final String ATTR_ROUTEZ = "routez";
+    private static final String ATTR_ACC_STATZ = "accStatz";
+    private static final String ATTR_LEAFZ = "leafz";
+    private static final String ATTR_GATEWAYZ = "gatewayz";
+
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
 
@@ -32,20 +43,20 @@ public class DashboardController {
         LeafzResponse leafz = natsService.getLeafz();
         GatewayzResponse gatewayz = natsService.getGatewayz();
 
-        model.addAttribute("connected", serverInfo != null);
+        model.addAttribute(ATTR_CONNECTED, serverInfo != null);
         model.addAttribute("serverInfo", serverInfo);
         model.addAttribute("jsInfo", jsInfo);
-        model.addAttribute("streams", streams);
-        model.addAttribute("connections", connections);
-        model.addAttribute("subsz", subsz);
-        model.addAttribute("routez", routez);
-        model.addAttribute("accStatz", accStatz);
-        model.addAttribute("leafz", leafz);
-        model.addAttribute("gatewayz", gatewayz);
+        model.addAttribute(ATTR_STREAMS, streams);
+        model.addAttribute(ATTR_CONNECTIONS, connections);
+        model.addAttribute(ATTR_SUBSZ, subsz);
+        model.addAttribute(ATTR_ROUTEZ, routez);
+        model.addAttribute(ATTR_ACC_STATZ, accStatz);
+        model.addAttribute(ATTR_LEAFZ, leafz);
+        model.addAttribute(ATTR_GATEWAYZ, gatewayz);
         model.addAttribute("natsUrl", natsService.getNatsUrl());
         model.addAttribute("alertCount24h", alertService.getAlertCountLast24h());
-        model.addAttribute("formatBytes", natsService);
-        model.addAttribute("activePage", "dashboard");
+        model.addAttribute(ATTR_FORMAT_BYTES, natsService);
+        model.addAttribute(ATTR_ACTIVE_PAGE, "dashboard");
 
         return "pages/dashboard";
     }
@@ -53,10 +64,10 @@ public class DashboardController {
     @GetMapping("/streams")
     public String streams(Model model) {
         StreamListResponse streams = natsService.getStreams();
-        model.addAttribute("streams", streams);
-        model.addAttribute("connected", natsService.isConnected());
-        model.addAttribute("formatBytes", natsService);
-        model.addAttribute("activePage", "streams");
+        model.addAttribute(ATTR_STREAMS, streams);
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_FORMAT_BYTES, natsService);
+        model.addAttribute(ATTR_ACTIVE_PAGE, "streams");
         return "pages/streams";
     }
 
@@ -64,9 +75,9 @@ public class DashboardController {
     public String streamDetail(@PathVariable String name, Model model) {
         StreamInfo stream = natsService.getStreamDetail(name);
         model.addAttribute("stream", stream);
-        model.addAttribute("connected", natsService.isConnected());
-        model.addAttribute("formatBytes", natsService);
-        model.addAttribute("activePage", "streams");
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_FORMAT_BYTES, natsService);
+        model.addAttribute(ATTR_ACTIVE_PAGE, "streams");
         return "pages/stream-detail";
     }
 
@@ -78,16 +89,16 @@ public class DashboardController {
         AccountStatzResponse accStatz = natsService.getAccountStatz();
         LeafzResponse leafz = natsService.getLeafz();
         GatewayzResponse gatewayz = natsService.getGatewayz();
-        model.addAttribute("connections", connections);
-        model.addAttribute("routez", routez);
-        model.addAttribute("subsz", subsz);
-        model.addAttribute("accStatz", accStatz);
-        model.addAttribute("leafz", leafz);
-        model.addAttribute("gatewayz", gatewayz);
-        model.addAttribute("connected", natsService.isConnected());
+        model.addAttribute(ATTR_CONNECTIONS, connections);
+        model.addAttribute(ATTR_ROUTEZ, routez);
+        model.addAttribute(ATTR_SUBSZ, subsz);
+        model.addAttribute(ATTR_ACC_STATZ, accStatz);
+        model.addAttribute(ATTR_LEAFZ, leafz);
+        model.addAttribute(ATTR_GATEWAYZ, gatewayz);
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
         model.addAttribute("filter", filter != null ? filter : "");
-        model.addAttribute("formatBytes", natsService);
-        model.addAttribute("activePage", "connections");
+        model.addAttribute(ATTR_FORMAT_BYTES, natsService);
+        model.addAttribute(ATTR_ACTIVE_PAGE, "connections");
         return "pages/connections";
     }
 
@@ -95,8 +106,8 @@ public class DashboardController {
     public String alerts(Model model) {
         model.addAttribute("rules", alertService.getAllRules());
         model.addAttribute("history", alertService.getRecentHistory(50));
-        model.addAttribute("connected", natsService.isConnected());
-        model.addAttribute("activePage", "alerts");
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_ACTIVE_PAGE, "alerts");
         return "pages/alerts";
     }
 }

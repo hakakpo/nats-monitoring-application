@@ -25,6 +25,8 @@ import java.util.Objects;
 public class AlertService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertService.class);
+    private static final String ALERT_RULE_NOT_FOUND = "Alert rule not found: ";
+    private static final String UNSUPPORTED_ALERT_LOG = "{} alert '{}' is not supported by the current monitoring implementation";
 
     private final AlertRuleRepository alertRuleRepository;
     private final AlertHistoryRepository alertHistoryRepository;
@@ -67,14 +69,14 @@ public class AlertService {
         return alertRuleRepository.findById(id).map(rule -> {
             rule.setEnabled(!rule.isEnabled());
             return alertRuleRepository.save(rule);
-        }).orElseThrow(() -> new NoSuchElementException("Alert rule not found: " + id));
+        }).orElseThrow(() -> new NoSuchElementException(ALERT_RULE_NOT_FOUND + id));
     }
 
     public AlertRule toggleEmailEnabled(Long id) {
         return alertRuleRepository.findById(id).map(rule -> {
             rule.setEmailEnabled(!rule.isEmailEnabled());
             return alertRuleRepository.save(rule);
-        }).orElseThrow(() -> new NoSuchElementException("Alert rule not found: " + id));
+        }).orElseThrow(() -> new NoSuchElementException(ALERT_RULE_NOT_FOUND + id));
     }
 
     public List<AlertHistory> getRecentHistory(int limit) {
@@ -112,8 +114,8 @@ public class AlertService {
         return switch (rule.getType()) {
             case STUCK_MESSAGES, STREAM_MESSAGE_COUNT -> getStreamMessageCount(rule.getStreamName());
             case CONSUMER_LAG -> {
-                log.warn("Consumer lag alert '{}' is not supported by the current monitoring implementation", rule.getName());
-                yield -1; // Requires consumer-level API
+                log.warn(UNSUPPORTED_ALERT_LOG, "Consumer lag", rule.getName());
+                yield -1;
             }
             case SLOW_CONSUMERS -> {
                 ServerInfo info = natsService.getServerInfo();
@@ -124,7 +126,7 @@ public class AlertService {
                 yield info != null ? info.mem() / (1024 * 1024) : -1; // MB
             }
             case HIGH_PENDING_ACKS -> {
-                log.warn("High pending ACKs alert '{}' is not supported by the current monitoring implementation", rule.getName());
+                log.warn(UNSUPPORTED_ALERT_LOG, "High pending ACKs", rule.getName());
                 yield -1;
             }
             case CONNECTION_COUNT -> {

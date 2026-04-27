@@ -16,6 +16,8 @@ import java.util.Map;
 public class MetricsScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(MetricsScheduler.class);
+    private static final String TOPIC_METRICS = "/topic/metrics";
+    private static final String KEY_CONNECTED = "connected";
 
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
@@ -38,7 +40,7 @@ public class MetricsScheduler {
 
                 // Push real-time data to WebSocket clients
                 Map<String, Object> update = new HashMap<>();
-                update.put("connected", true);
+                update.put(KEY_CONNECTED, true);
                 update.put("cpu", info.cpu());
                 update.put("mem", info.mem());
                 update.put("memFormatted", natsService.formatBytes(info.mem()));
@@ -52,15 +54,15 @@ public class MetricsScheduler {
                 update.put("messageRateHistory", natsService.getMessageRateHistory());
                 update.put("byteRateHistory", natsService.getByteRateHistory());
 
-                messagingTemplate.convertAndSend("/topic/metrics", update);
+                messagingTemplate.convertAndSend(TOPIC_METRICS, update);
             } else {
-                messagingTemplate.convertAndSend("/topic/metrics",
-                        Map.of("connected", false));
+                messagingTemplate.convertAndSend(TOPIC_METRICS,
+                        Map.of(KEY_CONNECTED, false));
             }
         } catch (Exception e) {
             log.debug("Metrics poll error: {}", e.getMessage());
-            messagingTemplate.convertAndSend("/topic/metrics",
-                    Map.of("connected", false));
+            messagingTemplate.convertAndSend(TOPIC_METRICS,
+                    Map.of(KEY_CONNECTED, false));
         }
     }
 
