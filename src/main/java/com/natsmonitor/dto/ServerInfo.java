@@ -35,7 +35,12 @@ public record ServerInfo(
         @JsonProperty("out_bytes") long outBytes,
         @JsonProperty("routes") int routes,
         @JsonProperty("remotes") int remotes,
-        @JsonProperty("leafnodes") int leafnodes
+        @JsonProperty("leafnodes") int leafnodes,
+        @JsonProperty("max_connections") int maxConnections,
+        @JsonProperty("cores") int cores,
+        @JsonProperty("gomaxprocs") int gomaxprocs,
+        @JsonProperty("start") String start,
+        @JsonProperty("git_commit") String gitCommit
 ) {
     static class JetStreamEnabledDeserializer extends JsonDeserializer<Boolean> {
         @Override

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class DashboardController {
@@ -27,6 +28,9 @@ public class DashboardController {
         ConnectionsResponse connections = natsService.getConnections();
         SubszResponse subsz = natsService.getSubsz();
         RoutezResponse routez = natsService.getRoutez();
+        AccountStatzResponse accStatz = natsService.getAccountStatz();
+        LeafzResponse leafz = natsService.getLeafz();
+        GatewayzResponse gatewayz = natsService.getGatewayz();
 
         model.addAttribute("connected", serverInfo != null);
         model.addAttribute("serverInfo", serverInfo);
@@ -35,6 +39,9 @@ public class DashboardController {
         model.addAttribute("connections", connections);
         model.addAttribute("subsz", subsz);
         model.addAttribute("routez", routez);
+        model.addAttribute("accStatz", accStatz);
+        model.addAttribute("leafz", leafz);
+        model.addAttribute("gatewayz", gatewayz);
         model.addAttribute("natsUrl", natsService.getNatsUrl());
         model.addAttribute("alertCount24h", alertService.getAlertCountLast24h());
         model.addAttribute("formatBytes", natsService);
@@ -64,14 +71,22 @@ public class DashboardController {
     }
 
     @GetMapping("/connections")
-    public String connections(Model model) {
+    public String connections(@RequestParam(value = "filter", required = false) String filter, Model model) {
         ConnectionsResponse connections = natsService.getConnections();
         RoutezResponse routez = natsService.getRoutez();
         SubszResponse subsz = natsService.getSubsz();
+        AccountStatzResponse accStatz = natsService.getAccountStatz();
+        LeafzResponse leafz = natsService.getLeafz();
+        GatewayzResponse gatewayz = natsService.getGatewayz();
         model.addAttribute("connections", connections);
         model.addAttribute("routez", routez);
         model.addAttribute("subsz", subsz);
+        model.addAttribute("accStatz", accStatz);
+        model.addAttribute("leafz", leafz);
+        model.addAttribute("gatewayz", gatewayz);
         model.addAttribute("connected", natsService.isConnected());
+        model.addAttribute("filter", filter != null ? filter : "");
+        model.addAttribute("formatBytes", natsService);
         model.addAttribute("activePage", "connections");
         return "pages/connections";
     }

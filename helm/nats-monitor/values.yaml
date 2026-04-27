@@ -37,6 +37,7 @@ smtp:
 # Application server
 server:
   port: 8080
+  contextPath: /nats-monitoring
 
 service:
   type: ClusterIP
@@ -48,12 +49,11 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
   hosts:
     - host: nats-monitor.local
       paths:
-        - path: /
+        - path: /nats-monitoring
           pathType: Prefix
   tls: []
   #  - secretName: nats-monitor-tls

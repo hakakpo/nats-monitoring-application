@@ -21,62 +21,75 @@
     </div>
 
     <div th:if="${stream != null}">
-        <!-- State -->
+        <!-- State Metrics -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-4">
                 <div class="metric-card">
                     <div class="metric-icon green"><i class="bi bi-envelope-fill"></i></div>
                     <div class="metric-value"
-                         th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0
-                    </div>
-                    <div class="metric-label">Total Messages</div>
+                         th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</div>
+                    <div class="metric-label">Messages</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-4">
                 <div class="metric-card">
                     <div class="metric-icon blue"><i class="bi bi-hdd"></i></div>
                     <div class="metric-value" th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0</div>
                     <div class="metric-label">Storage Used</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-4">
                 <div class="metric-card">
                     <div class="metric-icon yellow"><i class="bi bi-people"></i></div>
                     <div class="metric-value" th:text="${stream.safeState().consumerCount()}">0</div>
                     <div class="metric-label">Consumers</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-4">
+                <div class="metric-card">
+                    <div class="metric-icon purple"><i class="bi bi-hash"></i></div>
+                    <div class="metric-value" th:text="${stream.safeState().numSubjects()}">0</div>
+                    <div class="metric-label">Subjects</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4">
                 <div class="metric-card">
                     <div class="metric-icon red"><i class="bi bi-trash"></i></div>
                     <div class="metric-value" th:text="${stream.safeState().numDeleted()}">0</div>
                     <div class="metric-label">Deleted</div>
                 </div>
             </div>
+            <div class="col-md-2 col-sm-4">
+                <div class="metric-card">
+                    <div class="metric-icon blue"><i class="bi bi-calendar-event"></i></div>
+                    <div class="metric-value" style="font-size: 0.95rem;"
+                         th:text="${stream.created() != null && stream.created().length() >= 10 ? stream.created().substring(0, 10) : 'N/A'}">-</div>
+                    <div class="metric-label">Created</div>
+                </div>
+            </div>
         </div>
 
         <!-- Config & Subjects -->
         <div class="row g-3 mb-4">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div class="data-card">
                     <div class="data-card-header">
                         <h5><i class="bi bi-gear me-2"></i>Configuration</h5>
+                        <span class="badge-status"
+                              th:classappend="${stream.safeConfig().storage() == 'file'} ? 'file' : 'memory'"
+                              th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : 'unknown'}">-</span>
                     </div>
                     <div class="data-card-body">
                         <div class="info-grid">
                             <div class="info-item">
                                 <div class="info-item-label">Retention</div>
                                 <div class="info-item-value"
-                                     th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">
-                                    -
-                                </div>
+                                     th:text="${stream.safeConfig().retention() != null ? stream.safeConfig().retention() : '-'}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Storage</div>
                                 <div class="info-item-value"
-                                     th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : '-'}">
-                                    -
-                                </div>
+                                     th:text="${stream.safeConfig().storage() != null ? stream.safeConfig().storage() : '-'}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Replicas</div>
@@ -84,27 +97,44 @@
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Max Consumers</div>
-                                <div class="info-item-value" th:text="${stream.safeConfig().maxConsumers()}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().maxConsumers() == -1 ? 'Unlimited' : stream.safeConfig().maxConsumers()}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Max Messages</div>
-                                <div class="info-item-value" th:text="${stream.safeConfig().maxMsgs()}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().maxMsgs() == -1 ? 'Unlimited' : #numbers.formatInteger(stream.safeConfig().maxMsgs(), 1, 'COMMA')}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Bytes</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().maxBytes() == -1 ? 'Unlimited' : formatBytes.formatBytes(stream.safeConfig().maxBytes())}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Msg Size</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().maxMsgSize() == -1 ? 'Unlimited' : formatBytes.formatBytes(stream.safeConfig().maxMsgSize())}">-</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-item-label">Max Age</div>
+                                <div class="info-item-value"
+                                     th:text="${stream.safeConfig().maxAge() == 0 ? 'Unlimited' : stream.safeConfig().maxAge() + ' ns'}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Discard Policy</div>
                                 <div class="info-item-value"
-                                     th:text="${stream.safeConfig().discard() != null ? stream.safeConfig().discard() : '-'}">
-                                    -
-                                </div>
+                                     th:text="${stream.safeConfig().discard() != null ? stream.safeConfig().discard() : '-'}">-</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="data-card">
                     <div class="data-card-header">
                         <h5><i class="bi bi-hash me-2"></i>Subjects</h5>
+                        <span class="badge-status info"
+                              th:text="${stream.safeConfig().subjects() != null ? stream.safeConfig().subjects().size() + ' subjects' : '0'}">0</span>
                     </div>
                     <div class="data-card-body">
                         <div class="subject-list"
@@ -112,7 +142,7 @@
                             <span class="subject-tag" th:each="subject : ${stream.safeConfig().subjects()}"
                                   th:text="${subject}">subject</span>
                         </div>
-                        <p class="text-muted"
+                        <p style="color: var(--text-muted);"
                            th:if="${stream.safeConfig().subjects() == null || stream.safeConfig().subjects().isEmpty()}">No subjects configured</p>
                     </div>
                 </div>
@@ -130,27 +160,103 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <div class="info-item-label">First Sequence</div>
-                                <div class="info-item-value" th:text="${stream.safeState().firstSeq()}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(stream.safeState().firstSeq(), 1, 'COMMA')}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Last Sequence</div>
-                                <div class="info-item-value" th:text="${stream.safeState().lastSeq()}">-</div>
+                                <div class="info-item-value"
+                                     th:text="${#numbers.formatInteger(stream.safeState().lastSeq(), 1, 'COMMA')}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">First Timestamp</div>
-                                <div class="info-item-value" style="font-size: 0.85rem;"
-                                     th:text="${stream.safeState().firstTs() != null ? stream.safeState().firstTs() : 'N/A'}">
-                                    -
-                                </div>
+                                <div class="info-item-value truncatable" style="font-size: 0.85rem;"
+                                     th:text="${stream.safeState().firstTs() != null ? stream.safeState().firstTs() : 'N/A'}"
+                                     th:title="${stream.safeState().firstTs()}">-</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-item-label">Last Timestamp</div>
-                                <div class="info-item-value" style="font-size: 0.85rem;"
-                                     th:text="${stream.safeState().lastTs() != null ? stream.safeState().lastTs() : 'N/A'}">
-                                    -
-                                </div>
+                                <div class="info-item-value truncatable" style="font-size: 0.85rem;"
+                                     th:text="${stream.safeState().lastTs() != null ? stream.safeState().lastTs() : 'N/A'}"
+                                     th:title="${stream.safeState().lastTs()}">-</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consumers -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-people me-2"></i>Consumers</h5>
+                        <span class="badge-status" th:classappend="${stream.safeState().consumerCount() > 0} ? 'info' : 'warning'"
+                              th:text="|${stream.safeState().consumerCount()} consumers|">0</span>
+                    </div>
+                    <div class="data-card-body p-0">
+                        <div class="empty-state"
+                             th:if="${stream.safeConsumers().isEmpty()}">
+                            <i class="bi bi-people d-block"></i>
+                            <p>No consumers on this stream</p>
+                        </div>
+                        <table class="table-dark-custom"
+                               th:if="${!stream.safeConsumers().isEmpty()}">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Durable</th>
+                                <th>Filter Subject</th>
+                                <th>Deliver Policy</th>
+                                <th>Ack Policy</th>
+                                <th>Pending</th>
+                                <th>Ack Pending</th>
+                                <th>Redelivered</th>
+                                <th>Waiting</th>
+                                <th>Lag</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="consumer : ${stream.safeConsumers()}">
+                                <td>
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--primary-light);"
+                                          th:text="${consumer.name()}">-</span>
+                                </td>
+                                <td>
+                                    <span class="badge-status info" style="font-size: 0.7rem;"
+                                          th:if="${consumer.config() != null && consumer.config().durableName() != null}"
+                                          th:text="${consumer.config().durableName()}">-</span>
+                                    <span style="color: var(--text-muted);"
+                                          th:if="${consumer.config() == null || consumer.config().durableName() == null}">ephemeral</span>
+                                </td>
+                                <td>
+                                    <span class="truncatable" style="max-width: 150px; display: inline-block; font-family: monospace; font-size: 0.8rem;"
+                                          th:text="${consumer.config() != null && consumer.config().filterSubject() != null ? consumer.config().filterSubject() : '*'}"
+                                          th:title="${consumer.config() != null ? consumer.config().filterSubject() : ''}">*</span>
+                                </td>
+                                <td th:text="${consumer.config() != null && consumer.config().deliverPolicy() != null ? consumer.config().deliverPolicy() : '-'}">-</td>
+                                <td th:text="${consumer.config() != null && consumer.config().ackPolicy() != null ? consumer.config().ackPolicy() : '-'}">-</td>
+                                <td>
+                                    <span th:class="${consumer.numPending() > 0 ? 'badge-status warning' : ''}"
+                                          th:text="${#numbers.formatInteger(consumer.numPending(), 1, 'COMMA')}">0</span>
+                                </td>
+                                <td>
+                                    <span th:class="${consumer.numAckPending() > 0 ? 'badge-status danger' : ''}"
+                                          th:text="${#numbers.formatInteger(consumer.numAckPending(), 1, 'COMMA')}">0</span>
+                                </td>
+                                <td>
+                                    <span th:class="${consumer.numRedelivered() > 0 ? 'badge-status danger' : ''}"
+                                          th:text="${#numbers.formatInteger(consumer.numRedelivered(), 1, 'COMMA')}">0</span>
+                                </td>
+                                <td th:text="${#numbers.formatInteger(consumer.numWaiting(), 1, 'COMMA')}">0</td>
+                                <td>
+                                    <span th:class="${consumer.lag() > 100 ? 'badge-status danger' : (consumer.lag() > 0 ? 'badge-status warning' : '')}"
+                                          th:text="${#numbers.formatInteger(consumer.lag(), 1, 'COMMA')}">0</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

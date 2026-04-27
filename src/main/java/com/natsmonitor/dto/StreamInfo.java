@@ -10,7 +10,8 @@ public record StreamInfo(
         @JsonProperty("name") String name,
         @JsonProperty("config") StreamConfig config,
         @JsonProperty("state") StreamState state,
-        @JsonProperty("created") String created
+        @JsonProperty("created") String created,
+        @JsonProperty("consumer_detail") java.util.List<ConsumerInfo> consumerDetail
 ) {
     private static final StreamConfig EMPTY_CONFIG = new StreamConfig(
             null, List.of(), null, 0, 0, 0, 0, null, 0, null, 0
@@ -25,6 +26,10 @@ public record StreamInfo(
 
     public StreamState safeState() {
         return state != null ? state : EMPTY_STATE;
+    }
+
+    public java.util.List<ConsumerInfo> safeConsumers() {
+        return consumerDetail != null ? consumerDetail : List.of();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

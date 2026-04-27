@@ -34,6 +34,8 @@ spec:
           env:
             - name: SERVER_PORT
               value: {{ .Values.server.port | quote }}
+            - name: SERVER_CONTEXT_PATH
+              value: {{ .Values.server.contextPath | quote }}
             - name: NATS_MONITORING_URL
               value: {{ .Values.nats.monitoringUrl | quote }}
             - name: NATS_POLL_INTERVAL
@@ -64,13 +66,13 @@ spec:
             {{- end }}
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: {{ .Values.server.contextPath }}/actuator/health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: {{ .Values.server.contextPath }}/actuator/health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 5

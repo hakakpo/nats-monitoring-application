@@ -26,7 +26,7 @@ class MetricsSchedulerTest {
     @Test
     void shouldPublishMetricsWhenServerInfoIsAvailable() {
         ServerInfo info = new ServerInfo("id", "name", "1.0", "go", "localhost", 4222, 0, 1,
-                true, "1m", 4096, 0.5, 3, 3, 8, 1, 10, 20, 1024, 2048, 0, 0, 0);
+                true, "1m", 4096, 0.5, 3, 3, 8, 1, 10, 20, 1024, 2048, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "abc123");
         when(natsService.getServerInfo()).thenReturn(info);
         when(natsService.formatBytes(4096)).thenReturn("4.0 KB");
         when(natsService.formatBytes(1024)).thenReturn("1.0 KB");

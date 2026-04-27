@@ -9,6 +9,7 @@
     let reconnectTimer = null;
     let isConnecting = false;
     const THEME_KEY = 'theme';
+    const BASE = window.__contextPath || '';
 
     function connectWebSocket() {
         if (isConnecting) return;
@@ -22,7 +23,7 @@
         }
 
         isConnecting = true;
-        const socket = new SockJS('/ws');
+        const socket = new SockJS(BASE + '/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null; // Disable debug logs
 
@@ -300,7 +301,7 @@
             enabled: true
         };
 
-        fetch('/api/alerts/rules', {
+        fetch(BASE + '/api/alerts/rules', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(rule)
@@ -314,7 +315,7 @@
     };
 
     window.toggleRule = function (id) {
-        fetch('/api/alerts/rules/' + id + '/toggle', {method: 'POST'})
+        fetch(BASE + '/api/alerts/rules/' + id + '/toggle', {method: 'POST'})
             .then(res => {
                 if (res.ok) {
                     location.reload();
@@ -326,7 +327,7 @@
     };
 
     window.toggleEmailDelivery = function (id) {
-        fetch('/api/alerts/rules/' + id + '/toggle-email', {method: 'POST'})
+        fetch(BASE + '/api/alerts/rules/' + id + '/toggle-email', {method: 'POST'})
             .then(res => {
                 if (res.ok) {
                     location.reload();
@@ -339,7 +340,7 @@
 
     window.deleteRule = function (id) {
         if (confirm('Are you sure you want to delete this alert rule?')) {
-            fetch('/api/alerts/rules/' + id, {method: 'DELETE'})
+            fetch(BASE + '/api/alerts/rules/' + id, {method: 'DELETE'})
                 .then(res => {
                     if (res.ok) {
                         location.reload();

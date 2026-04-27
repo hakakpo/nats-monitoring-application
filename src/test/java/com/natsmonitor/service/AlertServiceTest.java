@@ -70,14 +70,14 @@ class AlertServiceTest {
     private static StreamListResponse streamsResponse(String streamName, long messages) {
         return new StreamListResponse(1, 0, 1, List.of(
                 new StreamInfo(streamName, null, new StreamInfo.StreamState(messages, 256, 1, messages, 0,
-                        null, null, 0, 0), null)
+                        null, null, 0, 0), null, null)
         ));
     }
 
     private static ServerInfo serverInfo(int connections, long memBytes, long slowConsumers) {
         return new ServerInfo("id", "name", "1.0", "go", "localhost", 4222, 0, 1, true,
                 "1m", memBytes, 0.5, connections, connections, 1, slowConsumers,
-                10, 20, 1024, 2048, 0, 0, 0);
+                10, 20, 1024, 2048, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "abc123");
     }
 
     @BeforeEach
@@ -231,5 +231,160 @@ class AlertServiceTest {
 
         verify(alertHistoryRepository).save(historyCaptor.capture());
         assertEquals("second-rule", historyCaptor.getValue().getRuleName());
+    }
+
+    @Test
+    void shouldEvaluateSlowConsumersRule() {
+        AlertRule rule = baseRule(AlertRule.AlertType.SLOW_CONSUMERS, 2);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(natsService.getServerInfo()).thenReturn(serverInfo(1, 0, 5));
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository).save(historyCaptor.capture());
+        assertEquals(5, historyCaptor.getValue().getCurrentValue());
+    }
+
+    @Test
+    void shouldEvaluateStreamMessageCountWithoutStreamFilter() {
+        AlertRule rule = baseRule(AlertRule.AlertType.STREAM_MESSAGE_COUNT, 5);
+        rule.setStreamName(null);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(natsService.getStreams()).thenReturn(new StreamListResponse(2, 0, 2, List.of(
+                new StreamInfo("S1", null, new StreamInfo.StreamState(10, 0, 1, 10, 0, null, null, 0, 0), null, null),
+                new StreamInfo("S2", null, new StreamInfo.StreamState(8, 0, 1, 8, 0, null, null, 0, 0), null, null)
+        )));
+        when(mailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository).save(historyCaptor.capture());
+        assertEquals(18, historyCaptor.getValue().getCurrentValue());
+    }
+
+    @Test
+    void shouldNotTriggerWhenValueBelowThreshold() {
+        AlertRule rule = baseRule(AlertRule.AlertType.CONNECTION_COUNT, 100);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getServerInfo()).thenReturn(serverInfo(2, 0, 0));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldSkipConsumerLagRule() {
+        AlertRule rule = baseRule(AlertRule.AlertType.CONSUMER_LAG, 1);
+        rule.setType(AlertRule.AlertType.CONSUMER_LAG);
+        // Force validation to skip by setting directly
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldSkipHighPendingAcksRule() {
+        AlertRule rule = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 1);
+        rule.setType(AlertRule.AlertType.HIGH_PENDING_ACKS);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldReturnNegativeOneWhenServerInfoIsNullForSlowConsumers() {
+        AlertRule rule = baseRule(AlertRule.AlertType.SLOW_CONSUMERS, 1);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getServerInfo()).thenReturn(null);
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldReturnNegativeOneWhenServerInfoIsNullForHighMemory() {
+        AlertRule rule = baseRule(AlertRule.AlertType.HIGH_MEMORY, 1);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getServerInfo()).thenReturn(null);
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldReturnNegativeOneWhenServerInfoIsNullForConnectionCount() {
+        AlertRule rule = baseRule(AlertRule.AlertType.CONNECTION_COUNT, 1);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getServerInfo()).thenReturn(null);
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldReturnNegativeOneWhenStreamsResponseIsNull() {
+        AlertRule rule = baseRule(AlertRule.AlertType.STUCK_MESSAGES, 1);
+        rule.setStreamName("ORDERS");
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getStreams()).thenReturn(null);
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+    }
+
+    @Test
+    void shouldRecordFailedEmailSendInHistory() {
+        AlertRule rule = baseRule(AlertRule.AlertType.CONNECTION_COUNT, 2);
+        rule.setEmailEnabled(true);
+        when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(natsService.getServerInfo()).thenReturn(serverInfo(5, 0, 0));
+        when(mailSender.createMimeMessage()).thenThrow(new RuntimeException("mail error"));
+
+        alertService.evaluateAllRules();
+
+        verify(alertHistoryRepository).save(historyCaptor.capture());
+        assertFalse(historyCaptor.getValue().isEmailSent());
+        assertEquals("Failed to send email notification", historyCaptor.getValue().getErrorMessage());
+        assertNull(rule.getLastNotified());
+    }
+
+    @Test
+    void shouldSaveRuleWithExistingCreatedAtAndValidCooldown() {
+        AlertRule rule = baseRule(AlertRule.AlertType.STUCK_MESSAGES, 10);
+        LocalDateTime existingDate = LocalDateTime.of(2026, 1, 1, 0, 0);
+        rule.setCreatedAt(existingDate);
+        rule.setCooldownMinutes(30);
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AlertRule saved = alertService.saveRule(rule);
+
+        assertEquals(existingDate, saved.getCreatedAt());
+        assertEquals(30, saved.getCooldownMinutes());
+    }
+
+    @Test
+    void shouldRejectUnsupportedHighPendingAcksType() {
+        AlertRule unsupported = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 10);
+        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(unsupported));
+    }
+
+    @Test
+    void shouldRejectNullEmailRecipient() {
+        AlertRule rule = baseRule(AlertRule.AlertType.STUCK_MESSAGES, 10);
+        rule.setEmailRecipient(null);
+        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(rule));
     }
 }

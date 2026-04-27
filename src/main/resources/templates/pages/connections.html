@@ -8,6 +8,14 @@
     <div class="page-header">
         <h1>Connections & Network</h1>
         <p>Client connections, cluster routes and subscriptions</p>
+        <div th:if="${filter == 'slow'}" class="mt-2">
+            <span class="badge-status warning" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                <i class="bi bi-funnel-fill"></i> Filtered: Slow Consumers only
+            </span>
+            <a th:href="@{/connections}" class="btn-outline-custom ms-2" style="text-decoration: none;">
+                <i class="bi bi-x-lg"></i> Clear filter
+            </a>
+        </div>
     </div>
 
     <div class="empty-state" th:if="${!connected}">
@@ -165,6 +173,201 @@
             </div>
         </div>
 
+        <!-- Account Stats -->
+        <div class="row g-3 mb-4" th:if="${accStatz != null && accStatz.accountStatz() != null && !accStatz.accountStatz().isEmpty()}">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-people me-2"></i>Account Statistics</h5>
+                        <span class="badge-status info" th:text="|${accStatz.accountStatz().size()} accounts|">0</span>
+                    </div>
+                    <div class="data-card-body p-0">
+                        <table class="table-dark-custom">
+                            <thead>
+                            <tr>
+                                <th>Account</th>
+                                <th>Connections</th>
+                                <th>Total Conns</th>
+                                <th>Leaf Nodes</th>
+                                <th>Subscriptions</th>
+                                <th>Msgs Sent</th>
+                                <th>Bytes Sent</th>
+                                <th>Msgs Received</th>
+                                <th>Bytes Received</th>
+                                <th>Slow Consumers</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="acc : ${accStatz.accountStatz()}">
+                                <td>
+                                    <span class="truncatable" style="max-width: 150px; display: inline-block;"
+                                          th:text="${acc.acc()}" th:title="${acc.acc()}">-</span>
+                                </td>
+                                <td th:text="${acc.conns()}">0</td>
+                                <td th:text="${acc.totalConns()}">0</td>
+                                <td th:text="${acc.leafnodes()}">0</td>
+                                <td th:text="${#numbers.formatInteger(acc.numSubscriptions(), 1, 'COMMA')}">0</td>
+                                <td th:text="${#numbers.formatInteger(acc.sent().msgs(), 1, 'COMMA')}">0</td>
+                                <td th:text="${formatBytes.formatBytes(acc.sent().bytes())}">0</td>
+                                <td th:text="${#numbers.formatInteger(acc.received().msgs(), 1, 'COMMA')}">0</td>
+                                <td th:text="${formatBytes.formatBytes(acc.received().bytes())}">0</td>
+                                <td>
+                                    <span th:class="${acc.slowConsumers() > 0 ? 'badge-status warning' : ''}"
+                                          th:text="${acc.slowConsumers()}">0</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaf Nodes -->
+        <div class="row g-3 mb-4" th:if="${leafz != null && leafz.leafs() != null && !leafz.leafs().isEmpty()}">
+            <!-- ...existing leaf nodes code... -->
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-diagram-2 me-2"></i>Leaf Node Connections</h5>
+                        <span class="badge-status healthy" th:text="|${leafz.leafnodes()} leaf nodes|">0</span>
+                    </div>
+                    <div class="data-card-body p-0">
+                        <table class="table-dark-custom">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Account</th>
+                                <th>IP</th>
+                                <th>Port</th>
+                                <th>Type</th>
+                                <th>RTT</th>
+                                <th>Msgs In</th>
+                                <th>Msgs Out</th>
+                                <th>Data In</th>
+                                <th>Data Out</th>
+                                <th>Subscriptions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="leaf : ${leafz.leafs()}">
+                                <td>
+                                    <span class="truncatable" style="max-width: 150px; display: inline-block;"
+                                          th:text="${leaf.name() != null ? leaf.name() : '-'}"
+                                          th:title="${leaf.name()}">-</span>
+                                </td>
+                                <td>
+                                    <span class="truncatable" style="max-width: 120px; display: inline-block;"
+                                          th:text="${leaf.account() != null ? leaf.account() : '-'}"
+                                          th:title="${leaf.account()}">-</span>
+                                </td>
+                                <td th:text="${leaf.ip()}">-</td>
+                                <td th:text="${leaf.port()}">0</td>
+                                <td>
+                                    <span class="badge-status"
+                                          th:classappend="${leaf.isSpoke()} ? 'warning' : 'info'"
+                                          th:text="${leaf.isSpoke()} ? 'Spoke' : 'Hub'">-</span>
+                                </td>
+                                <td th:text="${leaf.rtt() != null ? leaf.rtt() : '-'}">-</td>
+                                <td th:text="${#numbers.formatInteger(leaf.inMsgs(), 1, 'COMMA')}">0</td>
+                                <td th:text="${#numbers.formatInteger(leaf.outMsgs(), 1, 'COMMA')}">0</td>
+                                <td th:text="${leaf.inBytes()}">0</td>
+                                <td th:text="${leaf.outBytes()}">0</td>
+                                <td th:text="${leaf.subscriptions()}">0</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gateways -->
+        <div class="row g-3 mb-4" th:if="${gatewayz != null && ((gatewayz.outboundGateways() != null && !gatewayz.outboundGateways().isEmpty()) || (gatewayz.inboundGateways() != null && !gatewayz.inboundGateways().isEmpty()))}">
+            <div class="col-12">
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <h5><i class="bi bi-globe me-2"></i>Gateway Connections (Super-cluster)</h5>
+                        <span class="badge-status info"
+                              th:text="|Cluster: ${gatewayz.name() != null ? gatewayz.name() : '-'}|">-</span>
+                    </div>
+                    <div class="data-card-body">
+                        <!-- Outbound -->
+                        <div th:if="${gatewayz.outboundGateways() != null && !gatewayz.outboundGateways().isEmpty()}" class="mb-4">
+                            <h6 style="color: var(--info); margin-bottom: 0.75rem;"><i class="bi bi-arrow-up-right me-1"></i>Outbound Gateways</h6>
+                            <table class="table-dark-custom">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>CID</th>
+                                    <th>IP:Port</th>
+                                    <th>RTT</th>
+                                    <th>Msgs In</th>
+                                    <th>Msgs Out</th>
+                                    <th>Data In</th>
+                                    <th>Data Out</th>
+                                    <th>Subs</th>
+                                    <th>Uptime</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="entry : ${gatewayz.outboundGateways()}">
+                                    <td style="font-weight: 500; color: var(--primary-light);" th:text="${entry.key}">-</td>
+                                    <td th:text="${entry.value.connection() != null ? entry.value.connection().cid() : '-'}">-</td>
+                                    <td th:text="${entry.value.connection() != null ? entry.value.connection().ip() + ':' + entry.value.connection().port() : '-'}">-</td>
+                                    <td th:text="${entry.value.connection() != null && entry.value.connection().rtt() != null ? entry.value.connection().rtt() : '-'}">-</td>
+                                    <td th:text="${entry.value.connection() != null ? #numbers.formatInteger(entry.value.connection().inMsgs(), 1, 'COMMA') : '0'}">0</td>
+                                    <td th:text="${entry.value.connection() != null ? #numbers.formatInteger(entry.value.connection().outMsgs(), 1, 'COMMA') : '0'}">0</td>
+                                    <td th:text="${entry.value.connection() != null ? entry.value.connection().inBytes() : '0'}">0</td>
+                                    <td th:text="${entry.value.connection() != null ? entry.value.connection().outBytes() : '0'}">0</td>
+                                    <td th:text="${entry.value.connection() != null ? entry.value.connection().subscriptions() : '0'}">0</td>
+                                    <td th:text="${entry.value.connection() != null && entry.value.connection().uptime() != null ? entry.value.connection().uptime() : '-'}">-</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Inbound -->
+                        <div th:if="${gatewayz.inboundGateways() != null && !gatewayz.inboundGateways().isEmpty()}">
+                            <h6 style="color: var(--success); margin-bottom: 0.75rem;"><i class="bi bi-arrow-down-left me-1"></i>Inbound Gateways</h6>
+                            <table class="table-dark-custom">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>CID</th>
+                                    <th>IP:Port</th>
+                                    <th>RTT</th>
+                                    <th>Msgs In</th>
+                                    <th>Msgs Out</th>
+                                    <th>Data In</th>
+                                    <th>Data Out</th>
+                                    <th>Subs</th>
+                                    <th>Uptime</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <th:block th:each="entry : ${gatewayz.inboundGateways()}">
+                                    <tr th:each="conn : ${entry.value.connections()}">
+                                        <td style="font-weight: 500; color: var(--primary-light);" th:text="${entry.key}">-</td>
+                                        <td th:text="${conn.cid()}">-</td>
+                                        <td th:text="${conn.ip() + ':' + conn.port()}">-</td>
+                                        <td th:text="${conn.rtt() != null ? conn.rtt() : '-'}">-</td>
+                                        <td th:text="${#numbers.formatInteger(conn.inMsgs(), 1, 'COMMA')}">0</td>
+                                        <td th:text="${#numbers.formatInteger(conn.outMsgs(), 1, 'COMMA')}">0</td>
+                                        <td th:text="${conn.inBytes()}">0</td>
+                                        <td th:text="${conn.outBytes()}">0</td>
+                                        <td th:text="${conn.subscriptions()}">0</td>
+                                        <td th:text="${conn.uptime() != null ? conn.uptime() : '-'}">-</td>
+                                    </tr>
+                                </th:block>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Connection Details -->
         <div class="data-card" th:if="${connections != null}">
             <div class="data-card-header">
@@ -186,16 +389,20 @@
                         <th>IP</th>
                         <th>Lang</th>
                         <th>Version</th>
-                        <th>Subscriptions</th>
+                        <th>Subs</th>
                         <th>Msgs In</th>
                         <th>Msgs Out</th>
+                        <th>Data In</th>
+                        <th>Data Out</th>
+                        <th>Pending</th>
                         <th>Uptime</th>
                         <th>RTT</th>
                         <th>Status</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="conn : ${connections.connections()}">
+                    <tr th:each="conn : ${connections.connections()}"
+                        th:if="${filter != 'slow' || conn.slowConsumer()}">
                         <td th:text="${conn.cid()}">0</td>
                         <td>
                             <span class="truncatable"
@@ -206,9 +413,23 @@
                         <td th:text="${conn.ip()}">-</td>
                         <td th:text="${conn.lang() != null ? conn.lang() : '-'}">-</td>
                         <td th:text="${conn.version() != null ? conn.version() : '-'}">-</td>
-                        <td th:text="${conn.subscriptions()}">0</td>
+                        <td>
+                            <span th:text="${conn.subscriptions()}">0</span>
+                            <button class="btn-outline-custom ms-1" style="padding: 0.1rem 0.3rem; font-size: 0.65rem;"
+                                    th:if="${conn.subscriptionsList() != null && !conn.subscriptionsList().isEmpty()}"
+                                    th:title="${#strings.listJoin(conn.subscriptionsList(), ', ')}"
+                                    data-bs-toggle="tooltip" data-bs-placement="left">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
                         <td th:text="${#numbers.formatInteger(conn.inMsgs(), 1, 'COMMA')}">0</td>
                         <td th:text="${#numbers.formatInteger(conn.outMsgs(), 1, 'COMMA')}">0</td>
+                        <td style="font-size: 0.8rem;" th:text="${conn.inBytes() > 0 ? conn.inBytes() : '0'}">0</td>
+                        <td style="font-size: 0.8rem;" th:text="${conn.outBytes() > 0 ? conn.outBytes() : '0'}">0</td>
+                        <td>
+                            <span th:class="${conn.pendingBytes() > 0 ? 'badge-status warning' : ''}"
+                                  th:text="${conn.pendingBytes()}">0</span>
+                        </td>
                         <td th:text="${conn.uptime() != null ? conn.uptime() : '-'}">-</td>
                         <td th:text="${conn.rtt() != null ? conn.rtt() : '-'}">-</td>
                         <td>

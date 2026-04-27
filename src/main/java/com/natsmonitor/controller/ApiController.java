@@ -80,6 +80,24 @@ public class ApiController {
         return subsz != null ? ResponseEntity.ok(subsz) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
     }
 
+    @GetMapping("/accounts")
+    public ResponseEntity<AccountStatzResponse> accountStats() {
+        AccountStatzResponse accStatz = natsService.getAccountStatz();
+        return accStatz != null ? ResponseEntity.ok(accStatz) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
+    @GetMapping("/leafnodes")
+    public ResponseEntity<LeafzResponse> leafNodes() {
+        LeafzResponse leafz = natsService.getLeafz();
+        return leafz != null ? ResponseEntity.ok(leafz) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
+    @GetMapping("/gateways")
+    public ResponseEntity<GatewayzResponse> gateways() {
+        GatewayzResponse gatewayz = natsService.getGatewayz();
+        return gatewayz != null ? ResponseEntity.ok(gatewayz) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
     @GetMapping("/metrics/rates")
     public ResponseEntity<Map<String, Object>> rates() {
         return ResponseEntity.ok(Map.of(

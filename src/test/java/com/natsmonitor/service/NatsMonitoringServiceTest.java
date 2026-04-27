@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -376,8 +377,8 @@ class NatsMonitoringServiceTest {
             @Override
             public StreamListResponse getStreams() {
                 return new StreamListResponse(2, 0, 2, List.of(
-                        new StreamInfo("ORDERS", null, null, null),
-                        new StreamInfo("PAYMENTS", null, null, null)
+                        new StreamInfo("ORDERS", null, null, null, null),
+                        new StreamInfo("PAYMENTS", null, null, null, null)
                 ));
             }
         };
@@ -392,18 +393,18 @@ class NatsMonitoringServiceTest {
     @Test
     void shouldTrackRateHistoryAndCapItAtSixtyEntries() {
         ServerInfo baseline = new ServerInfo("id", "name", "1.0", "go", "localhost", 4222, 0, 1,
-                true, "1m", 1024, 1.0, 1, 1, 1, 0, 100, 200, 1024, 2048, 0, 0, 0);
+                true, "1m", 1024, 1.0, 1, 1, 1, 0, 100, 200, 1024, 2048, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "abc123");
         service.updateRateMetrics(baseline);
 
         for (int index = 1; index <= 61; index++) {
             ServerInfo info = new ServerInfo("id", "name", "1.0", "go", "localhost", 4222, 0, 1,
                     true, "1m", 1024, 1.0, 1, 1, 1, 0, 100 + index, 200 + index,
-                    1024 + index, 2048 + index, 0, 0, 0);
+                    1024 + index, 2048 + index, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "abc123");
             service.updateRateMetrics(info);
         }
 
         ServerInfo decreased = new ServerInfo("id", "name", "1.0", "go", "localhost", 4222, 0, 1,
-                true, "1m", 1024, 1.0, 1, 1, 1, 0, 120, 220, 1000, 2000, 0, 0, 0);
+                true, "1m", 1024, 1.0, 1, 1, 1, 0, 120, 220, 1000, 2000, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "abc123");
         service.updateRateMetrics(decreased);
 
         assertEquals(60, service.getMessageRateHistory().get("inRate").size());
@@ -423,7 +424,7 @@ class NatsMonitoringServiceTest {
     }
 
     @Test
-    void shouldFetchMetricsFromConfiguredEndpoints() throws Exception {
+    void shouldFetchMetricsFromConfiguredEndpoints()  {
         RestClient restClient = mock(RestClient.class);
         RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
         when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
@@ -432,7 +433,7 @@ class NatsMonitoringServiceTest {
         RestClient.ResponseSpec varzResponse = stubRetrieve(varzHeaders);
         when(varzResponse.body(ServerInfo.class)).thenReturn(new ServerInfo(
                 "server-1", "n1", "2.10.29", "go1.24.2", "127.0.0.1", 4222, 1048576, 1,
-                true, "1m", 4096, 1.5, 3, 5, 8, 1, 10, 20, 1024, 2048, 0, 0, 0
+                true, "1m", 4096, 1.5, 3, 5, 8, 1, 10, 20, 1024, 2048, 0, 0, 0, 65536, 8, 8, "2026-04-27T00:00:00Z", "f91ddd8"
         ));
 
         RestClient.RequestHeadersSpec<?> jszHeaders = stubUri(requestSpec, "/jsz");
@@ -583,5 +584,212 @@ class NatsMonitoringServiceTest {
         assertNull(httpService.getSubsz());
         assertNull(httpService.getRoutez());
         assertFalse(httpService.isConnected());
+    }
+
+    @Test
+    void shouldNotCrashWhenUpdatingRateMetricsWithNull() {
+        service.updateRateMetrics(null);
+        assertTrue(service.getMessageRateHistory().get("inRate").isEmpty());
+    }
+
+    @Test
+    void shouldFetchAccountStatzSuccessfully() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> accHeaders = stubUri(requestSpec, "/accstatz");
+        RestClient.ResponseSpec accResponse = stubRetrieve(accHeaders);
+        AccountStatzResponse expected = new AccountStatzResponse("server-1", "now", List.of());
+        when(accResponse.body(AccountStatzResponse.class)).thenReturn(expected);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        AccountStatzResponse result = httpService.getAccountStatz();
+
+        assertNotNull(result);
+        assertEquals("server-1", result.serverId());
+    }
+
+    @Test
+    void shouldReturnNullWhenAccountStatzFails() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> accHeaders = stubUri(requestSpec, "/accstatz");
+        RestClient.ResponseSpec accResponse = stubRetrieve(accHeaders);
+        when(accResponse.body(AccountStatzResponse.class)).thenThrow(new RestClientException("boom"));
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getAccountStatz());
+    }
+
+    @Test
+    void shouldFetchLeafzSuccessfully() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> leafHeaders = stubUri(requestSpec, "/leafz");
+        RestClient.ResponseSpec leafResponse = stubRetrieve(leafHeaders);
+        LeafzResponse expected = new LeafzResponse("server-1", "now", 0, List.of());
+        when(leafResponse.body(LeafzResponse.class)).thenReturn(expected);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        LeafzResponse result = httpService.getLeafz();
+
+        assertNotNull(result);
+        assertEquals(0, result.leafnodes());
+    }
+
+    @Test
+    void shouldReturnNullWhenLeafzFails() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> leafHeaders = stubUri(requestSpec, "/leafz");
+        RestClient.ResponseSpec leafResponse = stubRetrieve(leafHeaders);
+        when(leafResponse.body(LeafzResponse.class)).thenThrow(new RestClientException("boom"));
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getLeafz());
+    }
+
+    @Test
+    void shouldFetchGatewayzSuccessfully() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> gwHeaders = stubUri(requestSpec, "/gatewayz");
+        RestClient.ResponseSpec gwResponse = stubRetrieve(gwHeaders);
+        GatewayzResponse expected = new GatewayzResponse("server-1", "now", "gw", "host", 7222, Map.of(), Map.of());
+        when(gwResponse.body(GatewayzResponse.class)).thenReturn(expected);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        GatewayzResponse result = httpService.getGatewayz();
+
+        assertNotNull(result);
+        assertEquals("gw", result.name());
+    }
+
+    @Test
+    void shouldReturnNullWhenGatewayzFails() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> gwHeaders = stubUri(requestSpec, "/gatewayz");
+        RestClient.ResponseSpec gwResponse = stubRetrieve(gwHeaders);
+        when(gwResponse.body(GatewayzResponse.class)).thenThrow(new RestClientException("boom"));
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getGatewayz());
+    }
+
+    @Test
+    void shouldReturnNullStreamDetailWhenGetStreamsReturnsNull() {
+        NatsMonitoringService detailService = new NatsMonitoringService(config, new ObjectMapper()) {
+            @Override
+            public StreamListResponse getStreams() {
+                return null;
+            }
+        };
+        assertNull(detailService.getStreamDetail("ORDERS"));
+    }
+
+    @Test
+    void shouldReturnNullStreamDetailWhenExceptionOccurs() {
+        NatsMonitoringService detailService = new NatsMonitoringService(config, new ObjectMapper()) {
+            @Override
+            public StreamListResponse getStreams() {
+                throw new RuntimeException("boom");
+            }
+        };
+        assertNull(detailService.getStreamDetail("ORDERS"));
+    }
+
+    @Test
+    void shouldReturnNullWhenJszResponseBodyIsNull() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> jszHeaders = stubUri(requestSpec, "/jsz");
+        RestClient.ResponseSpec jszResponse = stubRetrieve(jszHeaders);
+        when(jszResponse.body(String.class)).thenReturn(null);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getJetStreamInfo());
+    }
+
+    @Test
+    void shouldReturnNullWhenStreamsResponseBodyIsNull() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true");
+        RestClient.ResponseSpec streamsResponse = stubRetrieve(streamsHeaders);
+        when(streamsResponse.body(String.class)).thenReturn(null);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getStreams());
+    }
+
+    @Test
+    void shouldReturnNullWhenConnzResponseBodyIsNull() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> connzHeaders = stubUri(requestSpec, "/connz?subs=true");
+        RestClient.ResponseSpec connzResponse = stubRetrieve(connzHeaders);
+        when(connzResponse.body(String.class)).thenReturn(null);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getConnections());
+    }
+
+    @Test
+    void shouldReturnNullWhenRoutezResponseBodyIsNull() {
+        RestClient restClient = mock(RestClient.class);
+        RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
+
+        RestClient.RequestHeadersSpec<?> routezHeaders = stubUri(requestSpec, "/routez");
+        RestClient.ResponseSpec routezResponse = stubRetrieve(routezHeaders);
+        when(routezResponse.body(String.class)).thenReturn(null);
+
+        NatsMonitoringService httpService = serviceWithRestClient(restClient);
+        assertNull(httpService.getRoutez());
+    }
+
+    @Test
+    void shouldUseTotalFieldWhenNoParsedStreamsAndNoOtherIndicator() throws Exception {
+        String json = """
+                {
+                  "total": 3,
+                  "offset": 0,
+                  "limit": 10
+                }
+                """;
+
+        StreamListResponse response = service.parseStreamsResponse(json);
+
+        assertEquals(3, response.total());
+        assertTrue(response.streams().isEmpty());
+    }
+
+    @Test
+    void shouldReturnMessageRateAndByteRateHistoryAsUnmodifiable() {
+        Map<String, List<Long>> msgHistory = service.getMessageRateHistory();
+        Map<String, List<Long>> byteHistory = service.getByteRateHistory();
+
+        assertNotNull(msgHistory);
+        assertNotNull(byteHistory);
+        assertThrows(UnsupportedOperationException.class, () -> msgHistory.put("new", List.of()));
+        assertThrows(UnsupportedOperationException.class, () -> byteHistory.put("new", List.of()));
     }
 }

@@ -45,11 +45,13 @@
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
-            <div class="metric-card">
-                <div class="metric-icon red"><i class="bi bi-exclamation-triangle"></i></div>
-                <div class="metric-value" id="metricSlowConsumers" th:text="${serverInfo.slowConsumers()}">0</div>
-                <div class="metric-label">Slow Consumers</div>
-            </div>
+            <a th:href="@{/connections(filter='slow')}" target="_blank" style="text-decoration: none; color: inherit;">
+                <div class="metric-card" style="cursor: pointer;">
+                    <div class="metric-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="metric-value" id="metricSlowConsumers" th:text="${serverInfo.slowConsumers()}">0</div>
+                    <div class="metric-label">Slow Consumers</div>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -127,8 +129,11 @@
                         <div class="info-item">
                             <div class="info-item-label">Server Name</div>
                             <div class="info-item-value truncatable" th:text="${serverInfo.serverName()}"
-                                 th:title="${serverInfo.serverName()}">-
-                            </div>
+                                 th:title="${serverInfo.serverName()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Host</div>
+                            <div class="info-item-value" th:text="${serverInfo.host() + ':' + serverInfo.port()}">-</div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">Uptime</div>
@@ -136,13 +141,15 @@
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">JetStream</div>
-                            <div class="info-item-value" th:text="${serverInfo.jetstream() ? 'Enabled' : 'Disabled'}">
-                                -
-                            </div>
+                            <div class="info-item-value" th:text="${serverInfo.jetstream() ? 'Enabled' : 'Disabled'}">-</div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">Total Connections</div>
                             <div class="info-item-value" th:text="${serverInfo.totalConnections()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Max Connections</div>
+                            <div class="info-item-value" th:text="${#numbers.formatInteger(serverInfo.maxConnections(), 1, 'COMMA')}">-</div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">Routes</div>
@@ -151,6 +158,37 @@
                         <div class="info-item">
                             <div class="info-item-label">Leaf Nodes</div>
                             <div class="info-item-value" th:text="${serverInfo.leafnodes()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Cores / GOMAXPROCS</div>
+                            <div class="info-item-value" th:text="${serverInfo.cores() + ' / ' + serverInfo.gomaxprocs()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Max Payload</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(serverInfo.maxPayload())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Data In</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(serverInfo.inBytes())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Data Out</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(serverInfo.outBytes())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Go Version</div>
+                            <div class="info-item-value" th:text="${serverInfo.goVersion()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Git Commit</div>
+                            <div class="info-item-value truncatable" th:text="${serverInfo.gitCommit()}"
+                                 th:title="${serverInfo.gitCommit()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Started</div>
+                            <div class="info-item-value truncatable"
+                                 th:text="${serverInfo.start() != null && serverInfo.start().length() >= 19 ? serverInfo.start().substring(0, 19) : serverInfo.start()}"
+                                 th:title="${serverInfo.start()}">-</div>
                         </div>
                     </div>
                 </div>
@@ -191,6 +229,34 @@
                         <div class="info-item">
                             <div class="info-item-label">HA Assets</div>
                             <div class="info-item-value" th:text="${jsInfo.haAssets()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Streams</div>
+                            <div class="info-item-value" th:text="${jsInfo.streams()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Consumers</div>
+                            <div class="info-item-value" th:text="${jsInfo.consumers()}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Total Messages</div>
+                            <div class="info-item-value" th:text="${#numbers.formatInteger(jsInfo.messages(), 1, 'COMMA')}">-</div>
+                        </div>
+                        <div class="info-item" th:if="${jsInfo.config() != null}">
+                            <div class="info-item-label">Max Memory</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.config().maxMemory())}">-</div>
+                        </div>
+                        <div class="info-item" th:if="${jsInfo.config() != null}">
+                            <div class="info-item-label">Max Storage</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.config().maxStorage())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Reserved Memory</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.reservedMemory())}">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Reserved Storage</div>
+                            <div class="info-item-value" th:text="${formatBytes.formatBytes(jsInfo.reservedStorage())}">-</div>
                         </div>
                     </div>
                 </div>
@@ -263,6 +329,121 @@
                     <div class="empty-state" style="padding: 1.5rem;"
                          th:if="${routez.routes() == null || routez.routes().isEmpty()}">
                         <p style="margin: 0; font-size: 0.9rem;">Standalone mode — no cluster routes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Stats -->
+    <div class="row g-3 mb-4" th:if="${connected && accStatz != null && accStatz.accountStatz() != null && !accStatz.accountStatz().isEmpty()}">
+        <div class="col-12">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-people me-2"></i>Account Statistics</h5>
+                    <span class="badge-status info" th:text="|${accStatz.accountStatz().size()} accounts|">0</span>
+                </div>
+                <div class="data-card-body p-0">
+                    <table class="table-dark-custom">
+                        <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Connections</th>
+                            <th>Leaf Nodes</th>
+                            <th>Subscriptions</th>
+                            <th>Msgs Sent</th>
+                            <th>Bytes Sent</th>
+                            <th>Msgs Received</th>
+                            <th>Bytes Received</th>
+                            <th>Slow Consumers</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="acc : ${accStatz.accountStatz()}">
+                            <td>
+                                <span class="truncatable" style="max-width: 150px; display: inline-block;"
+                                      th:text="${acc.acc()}" th:title="${acc.acc()}">-</span>
+                            </td>
+                            <td th:text="${acc.conns()}">0</td>
+                            <td th:text="${acc.leafnodes()}">0</td>
+                            <td th:text="${#numbers.formatInteger(acc.numSubscriptions(), 1, 'COMMA')}">0</td>
+                            <td th:text="${#numbers.formatInteger(acc.sent().msgs(), 1, 'COMMA')}">0</td>
+                            <td th:text="${formatBytes.formatBytes(acc.sent().bytes())}">0</td>
+                            <td th:text="${#numbers.formatInteger(acc.received().msgs(), 1, 'COMMA')}">0</td>
+                            <td th:text="${formatBytes.formatBytes(acc.received().bytes())}">0</td>
+                            <td>
+                                <span th:class="${acc.slowConsumers() > 0 ? 'badge-status warning' : ''}"
+                                      th:text="${acc.slowConsumers()}">0</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaf Nodes & Gateways -->
+    <div class="row g-3 mb-4" th:if="${connected}">
+        <div class="col-md-6" th:if="${leafz != null}">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-diagram-2 me-2"></i>Leaf Nodes</h5>
+                    <span class="badge-status" th:classappend="${leafz.leafnodes() > 0} ? 'healthy' : 'warning'"
+                          th:text="|${leafz.leafnodes()} nodes|">0</span>
+                </div>
+                <div class="data-card-body">
+                    <div th:if="${leafz.leafs() != null && !leafz.leafs().isEmpty()}">
+                        <div class="info-grid">
+                            <div class="info-item" th:each="leaf : ${leafz.leafs()}">
+                                <div class="info-item-label" th:text="${leaf.name() != null ? leaf.name() : 'Leaf Node'}">Leaf</div>
+                                <div class="info-item-value truncatable" th:text="${leaf.ip() + ':' + leaf.port()}"
+                                     th:title="${leaf.ip() + ':' + leaf.port()}">-</div>
+                                <div style="margin-top: 0.25rem;">
+                                    <span class="badge-status" style="font-size: 0.65rem;"
+                                          th:classappend="${leaf.isSpoke()} ? 'warning' : 'info'"
+                                          th:text="${leaf.isSpoke()} ? 'Spoke' : 'Hub'">-</span>
+                                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.5rem;"
+                                          th:text="|${leaf.subscriptions()} subs|">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="empty-state" style="padding: 1.5rem;"
+                         th:if="${leafz.leafs() == null || leafz.leafs().isEmpty()}">
+                        <p style="margin: 0; font-size: 0.9rem;">No leaf node connections</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6" th:if="${gatewayz != null}">
+            <div class="data-card">
+                <div class="data-card-header">
+                    <h5><i class="bi bi-globe me-2"></i>Gateways (Super-cluster)</h5>
+                    <span class="badge-status"
+                          th:classappend="${(gatewayz.outboundGateways() != null && !gatewayz.outboundGateways().isEmpty()) || (gatewayz.inboundGateways() != null && !gatewayz.inboundGateways().isEmpty())} ? 'healthy' : 'warning'"
+                          th:text="${((gatewayz.outboundGateways() != null ? gatewayz.outboundGateways().size() : 0) + (gatewayz.inboundGateways() != null ? gatewayz.inboundGateways().size() : 0)) + ' gateways'}">0</span>
+                </div>
+                <div class="data-card-body">
+                    <div th:if="${(gatewayz.outboundGateways() != null && !gatewayz.outboundGateways().isEmpty()) || (gatewayz.inboundGateways() != null && !gatewayz.inboundGateways().isEmpty())}">
+                        <div class="info-grid">
+                            <div class="info-item" th:each="entry : ${gatewayz.outboundGateways()}">
+                                <div class="info-item-label" th:text="|Outbound: ${entry.key}|">Gateway</div>
+                                <div class="info-item-value">
+                                    <span class="badge-status info" style="font-size: 0.7rem;">Outbound</span>
+                                </div>
+                            </div>
+                            <div class="info-item" th:each="entry : ${gatewayz.inboundGateways()}">
+                                <div class="info-item-label" th:text="|Inbound: ${entry.key}|">Gateway</div>
+                                <div class="info-item-value">
+                                    <span class="badge-status healthy" style="font-size: 0.7rem;">Inbound</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="empty-state" style="padding: 1.5rem;"
+                         th:if="${(gatewayz.outboundGateways() == null || gatewayz.outboundGateways().isEmpty()) && (gatewayz.inboundGateways() == null || gatewayz.inboundGateways().isEmpty())}">
+                        <p style="margin: 0; font-size: 0.9rem;">No gateway connections — single cluster</p>
                     </div>
                 </div>
             </div>

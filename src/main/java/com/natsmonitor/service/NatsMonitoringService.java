@@ -193,6 +193,42 @@ public class NatsMonitoringService {
         return objectMapper.readValue(responseBody, RoutezResponse.class);
     }
 
+    public AccountStatzResponse getAccountStatz() {
+        try {
+            return restClient.get()
+                    .uri("/accstatz")
+                    .retrieve()
+                    .body(AccountStatzResponse.class);
+        } catch (RestClientException e) {
+            log.error("Failed to fetch account stats: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public LeafzResponse getLeafz() {
+        try {
+            return restClient.get()
+                    .uri("/leafz")
+                    .retrieve()
+                    .body(LeafzResponse.class);
+        } catch (RestClientException e) {
+            log.error("Failed to fetch leaf nodes: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public GatewayzResponse getGatewayz() {
+        try {
+            return restClient.get()
+                    .uri("/gatewayz")
+                    .retrieve()
+                    .body(GatewayzResponse.class);
+        } catch (RestClientException e) {
+            log.error("Failed to fetch gateways: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean isConnected() {
         try {
             restClient.get().uri("/healthz").retrieve().body(String.class);
