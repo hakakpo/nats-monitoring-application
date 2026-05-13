@@ -27,4 +27,3 @@ public record LeafzResponse(
             @JsonProperty("subscriptions") int subscriptions
     ) {}
 }
-

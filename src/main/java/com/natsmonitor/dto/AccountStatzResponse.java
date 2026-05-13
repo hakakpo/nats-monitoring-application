@@ -29,4 +29,3 @@ public record AccountStatzResponse(
             @JsonProperty("bytes") long bytes
     ) {}
 }
-

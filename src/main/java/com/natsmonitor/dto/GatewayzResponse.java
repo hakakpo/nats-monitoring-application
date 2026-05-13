@@ -41,4 +41,3 @@ public record GatewayzResponse(
             @JsonProperty("uptime") String uptime
     ) {}
 }
-
