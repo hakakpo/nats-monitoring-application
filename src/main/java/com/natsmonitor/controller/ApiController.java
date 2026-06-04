@@ -143,6 +143,11 @@ public class ApiController {
         return ResponseEntity.ok(alertService.toggleEmailEnabled(id));
     }
 
+    @PostMapping("/alerts/rules/{id}/toggle-webhook")
+    public ResponseEntity<AlertRule> toggleWebhook(@PathVariable Long id) {
+        return ResponseEntity.ok(alertService.toggleWebhookEnabled(id));
+    }
+
     @GetMapping("/alerts/history")
     public ResponseEntity<List<?>> alertHistory(@RequestParam(defaultValue = "50") int limit) {
         return ResponseEntity.ok(alertService.getRecentHistory(limit));

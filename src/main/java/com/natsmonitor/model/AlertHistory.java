@@ -37,6 +37,12 @@ public class AlertHistory {
     @Column(nullable = false)
     private boolean emailSent;
 
+    @Column(length = 2048)
+    private String webhookUrl;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean webhookSent;
+
     private String errorMessage;
 
     @Column(nullable = false)
@@ -121,6 +127,22 @@ public class AlertHistory {
 
     public void setEmailSent(boolean emailSent) {
         this.emailSent = emailSent;
+    }
+
+    public String getWebhookUrl() {
+        return webhookUrl;
+    }
+
+    public void setWebhookUrl(String webhookUrl) {
+        this.webhookUrl = webhookUrl;
+    }
+
+    public boolean isWebhookSent() {
+        return webhookSent;
+    }
+
+    public void setWebhookSent(boolean webhookSent) {
+        this.webhookSent = webhookSent;
     }
 
     public String getErrorMessage() {

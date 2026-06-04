@@ -12,12 +12,23 @@ import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -32,6 +43,7 @@ public class AlertService {
     private final AlertHistoryRepository alertHistoryRepository;
     private final NatsMonitoringService natsService;
     private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
 
     @Value("${spring.mail.username:nats-monitor@localhost}")
     private String fromEmail;
@@ -44,6 +56,10 @@ public class AlertService {
         this.alertHistoryRepository = alertHistoryRepository;
         this.natsService = natsService;
         this.mailSender = mailSender;
+        this.restTemplate = new RestTemplateBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .readTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
     public List<AlertRule> getAllRules() {
@@ -75,6 +91,13 @@ public class AlertService {
     public AlertRule toggleEmailEnabled(Long id) {
         return alertRuleRepository.findById(id).map(rule -> {
             rule.setEmailEnabled(!rule.isEmailEnabled());
+            return alertRuleRepository.save(rule);
+        }).orElseThrow(() -> new NoSuchElementException(ALERT_RULE_NOT_FOUND + id));
+    }
+
+    public AlertRule toggleWebhookEnabled(Long id) {
+        return alertRuleRepository.findById(id).map(rule -> {
+            rule.setWebhookEnabled(!rule.isWebhookEnabled());
             return alertRuleRepository.save(rule);
         }).orElseThrow(() -> new NoSuchElementException(ALERT_RULE_NOT_FOUND + id));
     }
@@ -181,22 +204,48 @@ public class AlertService {
         history.setTriggeredAt(LocalDateTime.now());
 
         boolean emailSent = sendAlertEmail(rule, currentValue);
+        boolean webhookSent = sendAlertWebhook(rule, currentValue, message);
         history.setEmailSent(emailSent);
-        if (!rule.isEmailEnabled()) {
-            history.setErrorMessage("Email notification disabled for this rule");
-        } else if (!emailSent) {
-            history.setErrorMessage("Failed to send email notification");
-        }
+        history.setWebhookUrl(rule.getWebhookUrl());
+        history.setWebhookSent(webhookSent);
+        history.setErrorMessage(resolveNotificationError(rule, emailSent, webhookSent));
 
         alertHistoryRepository.save(history);
 
         rule.setLastTriggered(LocalDateTime.now());
-        if (emailSent) {
+        if (emailSent || webhookSent) {
             rule.setLastNotified(LocalDateTime.now());
         }
         alertRuleRepository.save(rule);
 
         log.warn("Alert triggered: {} (value={}, threshold={})", rule.getName(), currentValue, rule.getThreshold());
+    }
+
+    private String resolveNotificationError(AlertRule rule, boolean emailSent, boolean webhookSent) {
+        List<String> errors = new ArrayList<>();
+        if (!emailSent && !hasWebhookConfigured(rule)) {
+            if (!rule.isEmailEnabled()) {
+                errors.add("Email notification disabled for this rule");
+            } else {
+                errors.add("Failed to send email notification");
+            }
+        } else if (!emailSent && rule.isEmailEnabled()) {
+            errors.add("Failed to send email notification");
+        }
+
+        if (hasWebhookConfigured(rule) && !webhookSent) {
+            if (!rule.isWebhookEnabled()) {
+                errors.add("Webhook notification disabled for this rule");
+            } else {
+                errors.add("Failed to send webhook notification");
+            }
+        }
+
+        return errors.isEmpty() ? null : String.join("; ", errors);
+    }
+
+    private boolean hasWebhookConfigured(AlertRule rule) {
+        return rule.getWebhookUrl() != null && !rule.getWebhookUrl().isBlank();
     }
 
     private boolean sendAlertEmail(AlertRule rule, long currentValue) {
@@ -222,6 +271,49 @@ public class AlertService {
             log.error("Unexpected error sending alert email: {}", e.getMessage());
             return false;
         }
+    }
+
+    private boolean sendAlertWebhook(AlertRule rule, long currentValue, String message) {
+        if (!hasWebhookConfigured(rule)) {
+            return false;
+        }
+        if (!rule.isWebhookEnabled()) {
+            log.info("Webhook sending disabled for rule '{}'", rule.getName());
+            return false;
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Void> response = restTemplate.postForEntity(
+                    rule.getWebhookUrl(),
+                    new HttpEntity<>(buildWebhookPayload(rule, currentValue, message), headers),
+                    Void.class
+            );
+            boolean sent = response.getStatusCode().is2xxSuccessful();
+            if (sent) {
+                log.info("Alert webhook sent to {} for rule '{}'", rule.getWebhookUrl(), rule.getName());
+            } else {
+                log.error("Alert webhook failed for rule '{}' with status {}", rule.getName(), response.getStatusCode());
+            }
+            return sent;
+        } catch (Exception e) {
+            log.error("Failed to send alert webhook for rule '{}': {}", rule.getName(), e.getMessage());
+            return false;
+        }
+    }
+
+    private Map<String, Object> buildWebhookPayload(AlertRule rule, long currentValue, String message) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("ruleName", rule.getName());
+        payload.put("type", rule.getType());
+        payload.put("currentValue", currentValue);
+        payload.put("threshold", rule.getThreshold());
+        payload.put("streamName", rule.getStreamName());
+        payload.put("consumerName", rule.getConsumerName());
+        payload.put("triggeredAt", LocalDateTime.now().toString());
+        payload.put("message", message);
+        return payload;
     }
 
     private String resolveFromEmail() {
@@ -265,8 +357,26 @@ public class AlertService {
         if (rule.getEmailRecipient() == null || rule.getEmailRecipient().isBlank()) {
             throw new IllegalArgumentException("Email recipient is required");
         }
+        if (hasWebhookConfigured(rule) && !isValidWebhookUrl(rule.getWebhookUrl())) {
+            throw new IllegalArgumentException("Webhook URL must be a valid http or https URL");
+        }
+        if (rule.isWebhookEnabled() && !hasWebhookConfigured(rule)) {
+            throw new IllegalArgumentException("Webhook URL is required when webhook notification is enabled");
+        }
         if (!isSupportedType(rule.getType())) {
             throw new IllegalArgumentException("Alert type '%s' is not supported yet".formatted(rule.getType()));
+        }
+    }
+
+    private boolean isValidWebhookUrl(String webhookUrl) {
+        try {
+            URI uri = URI.create(webhookUrl);
+            String scheme = uri.getScheme();
+            return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    && uri.getHost() != null
+                    && !uri.getHost().isBlank();
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 

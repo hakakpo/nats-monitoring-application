@@ -42,6 +42,8 @@ class ApiControllerTest {
         rule.setType(AlertRule.AlertType.CONNECTION_COUNT);
         rule.setThreshold(5);
         rule.setEmailRecipient("ops@example.com");
+        rule.setWebhookUrl("https://hooks.example.com/nats");
+        rule.setWebhookEnabled(true);
         return rule;
     }
 
@@ -51,7 +53,9 @@ class ApiControllerTest {
                   "name": "rule-1",
                   "type": "CONNECTION_COUNT",
                   "threshold": 5,
-                  "emailRecipient": "ops@example.com"
+                  "emailRecipient": "ops@example.com",
+                  "webhookUrl": "https://hooks.example.com/nats",
+                  "webhookEnabled": true
                 }
                 """;
     }
@@ -271,7 +275,9 @@ class ApiControllerTest {
                         .content(alertRuleJson()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("rule-1"))
-                .andExpect(jsonPath("$.emailRecipient").value("ops@example.com"));
+                .andExpect(jsonPath("$.emailRecipient").value("ops@example.com"))
+                .andExpect(jsonPath("$.webhookUrl").value("https://hooks.example.com/nats"))
+                .andExpect(jsonPath("$.webhookEnabled").value(true));
     }
 
     @Test
@@ -308,6 +314,17 @@ class ApiControllerTest {
     }
 
     @Test
+    void shouldToggleWebhookForRule() throws Exception {
+        AlertRule rule = alertRule();
+        rule.setWebhookEnabled(false);
+        when(alertService.toggleWebhookEnabled(1L)).thenReturn(rule);
+
+        mockMvc.perform(post("/api/alerts/rules/1/toggle-webhook"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.webhookEnabled").value(false));
+    }
+
+    @Test
     void shouldReturnAlertHistory() throws Exception {
         AlertHistory history = new AlertHistory();
         history.setRuleName("test-rule");
@@ -316,6 +333,8 @@ class ApiControllerTest {
         history.setCurrentValue(5);
         history.setThreshold(3);
         history.setEmailSentTo("ops@example.com");
+        history.setWebhookUrl("https://hooks.example.com/nats");
+        history.setWebhookSent(true);
         history.setTriggeredAt(LocalDateTime.now());
         when(alertService.getRecentHistory(50)).thenReturn(List.of(history));
 

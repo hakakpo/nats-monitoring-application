@@ -28,6 +28,10 @@ public record AlertRuleRequest(
 
         Boolean emailEnabled,
 
+        String webhookUrl,
+
+        Boolean webhookEnabled,
+
         int cooldownMinutes
 ) {
     public AlertRule toEntity() {
@@ -40,6 +44,8 @@ public record AlertRuleRequest(
         rule.setEmailRecipient(emailRecipient);
         rule.setEnabled(enabled != null ? enabled : true);
         rule.setEmailEnabled(emailEnabled != null ? emailEnabled : true);
+        rule.setWebhookUrl(webhookUrl);
+        rule.setWebhookEnabled(webhookEnabled != null ? webhookEnabled : webhookUrl != null && !webhookUrl.isBlank());
         rule.setCooldownMinutes(cooldownMinutes > 0 ? cooldownMinutes : 15);
         return rule;
     }

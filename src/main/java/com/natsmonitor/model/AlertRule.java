@@ -44,6 +44,12 @@ public class AlertRule {
     @Column(nullable = false)
     private boolean emailEnabled = true;
 
+    @Column(length = 2048)
+    private String webhookUrl;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean webhookEnabled = false;
+
     private LocalDateTime lastTriggered;
 
     private LocalDateTime lastNotified;
@@ -126,6 +132,22 @@ public class AlertRule {
 
     public void setEmailEnabled(boolean emailEnabled) {
         this.emailEnabled = emailEnabled;
+    }
+
+    public String getWebhookUrl() {
+        return webhookUrl;
+    }
+
+    public void setWebhookUrl(String webhookUrl) {
+        this.webhookUrl = webhookUrl;
+    }
+
+    public boolean isWebhookEnabled() {
+        return webhookEnabled;
+    }
+
+    public void setWebhookEnabled(boolean webhookEnabled) {
+        this.webhookEnabled = webhookEnabled;
     }
 
     public LocalDateTime getLastTriggered() {

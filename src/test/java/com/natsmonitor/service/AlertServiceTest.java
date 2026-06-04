@@ -7,6 +7,7 @@ import com.natsmonitor.model.AlertHistory;
 import com.natsmonitor.model.AlertHistoryRepository;
 import com.natsmonitor.model.AlertRule;
 import com.natsmonitor.model.AlertRuleRepository;
+import com.sun.net.httpserver.HttpServer;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,10 +22,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -109,6 +113,15 @@ class AlertServiceTest {
         missingEmail.setEmailRecipient(" ");
         assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(missingEmail));
 
+        AlertRule invalidWebhook = baseRule(AlertRule.AlertType.STUCK_MESSAGES, 10);
+        invalidWebhook.setWebhookUrl("ftp://hooks.example.com/alerts");
+        invalidWebhook.setWebhookEnabled(true);
+        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(invalidWebhook));
+
+        AlertRule missingWebhookUrl = baseRule(AlertRule.AlertType.STUCK_MESSAGES, 10);
+        missingWebhookUrl.setWebhookEnabled(true);
+        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(missingWebhookUrl));
+
         AlertRule unsupported = baseRule(AlertRule.AlertType.CONSUMER_LAG, 10);
         assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(unsupported));
     }
@@ -118,15 +131,18 @@ class AlertServiceTest {
         AlertRule rule = baseRule(AlertRule.AlertType.CONNECTION_COUNT, 2);
         rule.setEnabled(true);
         rule.setEmailEnabled(true);
+        rule.setWebhookEnabled(true);
         when(alertRuleRepository.findById(7L)).thenReturn(java.util.Optional.of(rule));
         when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         AlertRule toggledRule = alertService.toggleRule(7L);
         AlertRule toggledEmailRule = alertService.toggleEmailEnabled(7L);
+        AlertRule toggledWebhookRule = alertService.toggleWebhookEnabled(7L);
 
         assertFalse(toggledRule.isEnabled());
         assertFalse(toggledEmailRule.isEmailEnabled());
-        verify(alertRuleRepository, times(2)).save(rule);
+        assertFalse(toggledWebhookRule.isWebhookEnabled());
+        verify(alertRuleRepository, times(3)).save(rule);
     }
 
     @Test
@@ -135,6 +151,7 @@ class AlertServiceTest {
 
         assertThrows(NoSuchElementException.class, () -> alertService.toggleRule(1L));
         assertThrows(NoSuchElementException.class, () -> alertService.toggleEmailEnabled(1L));
+        assertThrows(NoSuchElementException.class, () -> alertService.toggleWebhookEnabled(1L));
     }
 
     @Test
@@ -198,6 +215,43 @@ class AlertServiceTest {
         assertEquals("Email notification disabled for this rule", history.getErrorMessage());
         assertNull(rule.getLastNotified());
         assertNotNull(rule.getLastTriggered());
+    }
+
+    @Test
+    void shouldSendWebhookWhenConfigured() throws Exception {
+        AtomicReference<String> requestBody = new AtomicReference<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/alerts", exchange -> {
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+        });
+        server.start();
+
+        try {
+            AlertRule rule = baseRule(AlertRule.AlertType.CONNECTION_COUNT, 2);
+            rule.setEmailEnabled(false);
+            rule.setWebhookUrl("http://localhost:%d/alerts".formatted(server.getAddress().getPort()));
+            rule.setWebhookEnabled(true);
+            when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+            when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(natsService.getServerInfo()).thenReturn(serverInfo(5, 0, 0));
+
+            alertService.evaluateAllRules();
+
+            verify(mailSender, never()).send(any(MimeMessage.class));
+            verify(alertHistoryRepository).save(historyCaptor.capture());
+            AlertHistory history = historyCaptor.getValue();
+            assertFalse(history.isEmailSent());
+            assertTrue(history.isWebhookSent());
+            assertEquals(rule.getWebhookUrl(), history.getWebhookUrl());
+            assertNull(history.getErrorMessage());
+            assertNotNull(rule.getLastNotified());
+            assertTrue(requestBody.get().contains("\"ruleName\":\"cpu-alert\""));
+            assertTrue(requestBody.get().contains("\"currentValue\":5"));
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

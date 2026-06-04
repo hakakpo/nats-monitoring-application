@@ -39,9 +39,15 @@
                             <span class="badge-status danger" th:text="|Threshold: ${rule.threshold}|">Threshold</span>
                             <span class="badge-status" th:classappend="${rule.emailEnabled} ? 'healthy' : 'warning'"
                                   th:text="${rule.emailEnabled} ? 'Email ON' : 'Email OFF'">Email ON</span>
+                            <span class="badge-status" th:classappend="${rule.webhookEnabled} ? 'healthy' : 'warning'"
+                                  th:if="${rule.webhookUrl != null && !rule.webhookUrl.isBlank()}"
+                                  th:text="${rule.webhookEnabled} ? 'Webhook ON' : 'Webhook OFF'">Webhook ON</span>
                         </div>
                         <div class="mt-2" style="font-size: 0.85rem; color: var(--text-muted);">
                             <i class="bi bi-envelope me-1"></i><span th:text="${rule.emailRecipient}">email</span>
+                            <span class="ms-3" th:if="${rule.webhookUrl != null && !rule.webhookUrl.isBlank()}">
+                                <i class="bi bi-link-45deg me-1"></i><span th:text="${rule.webhookUrl}">webhook</span>
+                            </span>
                             <span class="ms-3"><i class="bi bi-clock me-1"></i>Cooldown: <span
                                     th:text="${rule.cooldownMinutes}">15</span>min</span>
                         </div>
@@ -51,6 +57,13 @@
                                 th:title="${rule.emailEnabled} ? 'Disable email sending' : 'Enable email sending'">
                             <i class="bi"
                                th:classappend="${rule.emailEnabled} ? 'bi-envelope-check' : 'bi-envelope-slash'"></i>
+                        </button>
+                        <button class="btn-outline-custom"
+                                th:if="${rule.webhookUrl != null && !rule.webhookUrl.isBlank()}"
+                                th:onclick="|toggleWebhookDelivery(${rule.id})|"
+                                th:title="${rule.webhookEnabled} ? 'Disable webhook sending' : 'Enable webhook sending'">
+                            <i class="bi"
+                               th:classappend="${rule.webhookEnabled} ? 'bi-link-45deg' : 'bi-link'"></i>
                         </button>
                         <button class="btn-outline-custom" th:onclick="|toggleRule(${rule.id})|">
                             <i class="bi" th:classappend="${rule.enabled} ? 'bi-pause' : 'bi-play'"></i>
@@ -84,6 +97,7 @@
                     <th>Value</th>
                     <th>Threshold</th>
                     <th>Email Sent</th>
+                    <th>Webhook Sent</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -98,6 +112,12 @@
                     <td>
                         <i class="bi"
                            th:classappend="${h.emailSent} ? 'bi-check-circle text-success' : 'bi-x-circle text-danger'"></i>
+                    </td>
+                    <td>
+                        <i class="bi"
+                           th:if="${h.webhookUrl != null && !h.webhookUrl.isBlank()}"
+                           th:classappend="${h.webhookSent} ? 'bi-check-circle text-success' : 'bi-x-circle text-danger'"></i>
+                        <span th:if="${h.webhookUrl == null || h.webhookUrl.isBlank()}">-</span>
                     </td>
                 </tr>
                 </tbody>
@@ -149,6 +169,16 @@
                     <div class="mb-3 form-check">
                         <input checked class="form-check-input" id="ruleEmailEnabled" type="checkbox">
                         <label class="form-check-label" for="ruleEmailEnabled">Enable email sending for this
+                            rule</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Webhook URL (optional)</label>
+                        <input class="form-control" id="ruleWebhookUrl" placeholder="https://hooks.example.com/nats-alerts"
+                               type="url">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" id="ruleWebhookEnabled" type="checkbox">
+                        <label class="form-check-label" for="ruleWebhookEnabled">Enable webhook sending for this
                             rule</label>
                     </div>
                     <div class="mb-3">

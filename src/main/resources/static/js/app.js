@@ -297,6 +297,8 @@
             threshold: parseInt(document.getElementById('ruleThreshold').value),
             emailRecipient: document.getElementById('ruleEmail').value,
             emailEnabled: document.getElementById('ruleEmailEnabled').checked,
+            webhookUrl: document.getElementById('ruleWebhookUrl').value || null,
+            webhookEnabled: document.getElementById('ruleWebhookEnabled').checked,
             cooldownMinutes: parseInt(document.getElementById('ruleCooldown').value) || 15,
             enabled: true
         };
@@ -328,6 +330,18 @@
 
     window.toggleEmailDelivery = function (id) {
         fetch(BASE + '/api/alerts/rules/' + id + '/toggle-email', {method: 'POST'})
+            .then(res => {
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    readErrorMessage(res).then(message => alert('Error: ' + message));
+                }
+            })
+            .catch(err => alert('Error: ' + err.message));
+    };
+
+    window.toggleWebhookDelivery = function (id) {
+        fetch(BASE + '/api/alerts/rules/' + id + '/toggle-webhook', {method: 'POST'})
             .then(res => {
                 if (res.ok) {
                     location.reload();
