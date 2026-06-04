@@ -24,6 +24,16 @@ nats:
   systemEventsEnabled: false
   pollIntervalSeconds: 5
   snapshotRetentionHours: 24
+  tls:
+    enabled: false
+    keyStorePath: ""
+    keyStorePassword: ""
+    keyStoreType: "PKCS12"
+    keyPassword: ""
+    trustStorePath: ""
+    trustStorePassword: ""
+    trustStoreType: "PKCS12"
+    protocol: "TLS"
 
 # Alerting configuration
 alerting:

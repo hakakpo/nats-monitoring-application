@@ -1,10 +1,14 @@
 package com.natsmonitor.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConfigurationProperties(prefix = "nats.monitoring")
+@Getter
+@Setter
 public class NatsMonitoringConfig {
 
     private String url = "http://localhost:8222";
@@ -14,6 +18,7 @@ public class NatsMonitoringConfig {
     private boolean systemEventsEnabled = false;
     private int pollIntervalSeconds = 5;
     private int snapshotRetentionHours = 24;
+    private NatsTlsConfig tls = new NatsTlsConfig();
 
     public String getUrl() {
         return url;
@@ -69,5 +74,13 @@ public class NatsMonitoringConfig {
 
     public void setSnapshotRetentionHours(int snapshotRetentionHours) {
         this.snapshotRetentionHours = snapshotRetentionHours;
+    }
+
+    public NatsTlsConfig getTls() {
+        return tls;
+    }
+
+    public void setTls(NatsTlsConfig tls) {
+        this.tls = tls;
     }
 }

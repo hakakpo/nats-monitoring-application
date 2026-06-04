@@ -2,50 +2,54 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: ${SERVER_CONTEXT_PATH:/nats-monitoring}
+
 spring:
   application:
-    name: nats-monitoring
+    name: nats-monitoring-local
   thymeleaf:
     cache: false
     prefix: classpath:/templates/
     suffix: .html
   datasource:
-    url: jdbc:h2:file:./data/nats-monitor-db
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/nats-monitor-local-db;AUTO_SERVER=TRUE}
     driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: false
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
     database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: true
   flyway:
     enabled: true
     baseline-on-migrate: true
     baseline-version: 0
   h2:
     console:
-      enabled: ${H2_CONSOLE_ENABLED:false}
+      enabled: true
+      path: /h2-console
   mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
     username: ${SMTP_USERNAME:}
     password: ${SMTP_PASSWORD:}
     properties:
       mail:
         smtp:
-          auth: true
+          auth: false
           starttls:
-            enable: true
+            enable: false
 
-# NATS Monitoring Configuration
 nats:
   monitoring:
     url: ${NATS_MONITORING_URL:http://localhost:8222}
     server-url: ${NATS_SERVER_URL:nats://localhost:4222}
-    username: ${NATS_USERNAME:}
-    password: ${NATS_PASSWORD:}
-    system-events-enabled: ${NATS_SYSTEM_EVENTS_ENABLED:false}
+    username: ${NATS_USERNAME:local}
+    password: ${NATS_PASSWORD:local}
+    system-events-enabled: ${NATS_SYSTEM_EVENTS_ENABLED:true}
     poll-interval-seconds: ${NATS_POLL_INTERVAL:5}
     snapshot-retention-hours: ${NATS_SNAPSHOT_RETENTION_HOURS:24}
     tls:
@@ -59,7 +63,6 @@ nats:
       trust-store-type: ${NATS_TLS_TRUST_STORE_TYPE:PKCS12}
       protocol: ${NATS_TLS_PROTOCOL:TLS}
 
-# Alerting defaults
 alerting:
   enabled: ${ALERTING_ENABLED:true}
   check-interval-seconds: ${ALERT_CHECK_INTERVAL:30}
@@ -69,7 +72,7 @@ alerting:
 management:
   health:
     mail:
-      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -77,3 +80,9 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  level:
+    com.natsmonitor: INFO
+    org.flywaydb: INFO
+    org.hibernate.SQL: ${LOCAL_HIBERNATE_SQL_LOG_LEVEL:WARN}

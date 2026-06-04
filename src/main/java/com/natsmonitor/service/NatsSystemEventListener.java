@@ -1,10 +1,10 @@
 package com.natsmonitor.service;
 
+import com.natsmonitor.config.NatsConnectionOptionsFactory;
 import com.natsmonitor.config.NatsMonitoringConfig;
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
 import io.nats.client.Nats;
-import io.nats.client.Options;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Objects;
 
 @Service
@@ -20,12 +19,17 @@ public class NatsSystemEventListener {
     private static final Logger log = LoggerFactory.getLogger(NatsSystemEventListener.class);
 
     private final NatsMonitoringConfig config;
+    private final NatsConnectionOptionsFactory optionsFactory;
     private final NatsEventService eventService;
     private Connection connection;
     private Dispatcher dispatcher;
 
-    public NatsSystemEventListener(NatsMonitoringConfig config, NatsEventService eventService) {
+    public NatsSystemEventListener(
+            NatsMonitoringConfig config,
+            NatsConnectionOptionsFactory optionsFactory,
+            NatsEventService eventService) {
         this.config = Objects.requireNonNull(config, "config must not be null");
+        this.optionsFactory = Objects.requireNonNull(optionsFactory, "optionsFactory must not be null");
         this.eventService = Objects.requireNonNull(eventService, "eventService must not be null");
     }
 
@@ -36,15 +40,7 @@ public class NatsSystemEventListener {
             return;
         }
         try {
-            Options.Builder builder = new Options.Builder()
-                    .server(config.getServerUrl())
-                    .connectionName("nats-monitoring-application")
-                    .connectionTimeout(Duration.ofSeconds(5))
-                    .maxReconnects(-1);
-            if (config.getUsername() != null && !config.getUsername().isBlank()) {
-                builder.userInfo(config.getUsername(), config.getPassword() != null ? config.getPassword() : "");
-            }
-            connection = Nats.connect(builder.build());
+            connection = Nats.connect(optionsFactory.create(config));
             dispatcher = connection.createDispatcher(message -> {
                 try {
                     eventService.record(message.getSubject(), message.getData());
@@ -55,8 +51,10 @@ public class NatsSystemEventListener {
             dispatcher.subscribe("$SYS.>");
             dispatcher.subscribe("$JS.EVENT.ADVISORY.>");
             log.info("NATS system event listener subscribed to $SYS.> and $JS.EVENT.ADVISORY.>");
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            log.warn("Unable to start NATS system event listener: {}", e.getMessage());
+        } catch (IOException e) {
             log.warn("Unable to start NATS system event listener: {}", e.getMessage());
         } catch (Exception e) {
             log.warn("Unable to start NATS system event listener: {}", e.getMessage());

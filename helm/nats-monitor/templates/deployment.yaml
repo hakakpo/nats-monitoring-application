@@ -46,6 +46,42 @@ spec:
               value: {{ .Values.nats.pollIntervalSeconds | quote }}
             - name: NATS_SNAPSHOT_RETENTION_HOURS
               value: {{ .Values.nats.snapshotRetentionHours | quote }}
+            - name: NATS_TLS_ENABLED
+              value: {{ .Values.nats.tls.enabled | quote }}
+            - name: NATS_TLS_KEY_STORE_PATH
+              value: {{ .Values.nats.tls.keyStorePath | quote }}
+            - name: NATS_TLS_KEY_STORE_TYPE
+              value: {{ .Values.nats.tls.keyStoreType | quote }}
+            - name: NATS_TLS_TRUST_STORE_PATH
+              value: {{ .Values.nats.tls.trustStorePath | quote }}
+            - name: NATS_TLS_TRUST_STORE_TYPE
+              value: {{ .Values.nats.tls.trustStoreType | quote }}
+            - name: NATS_TLS_PROTOCOL
+              value: {{ .Values.nats.tls.protocol | quote }}
+            {{- if or .Values.nats.tls.keyStorePassword .Values.nats.tls.keyPassword .Values.nats.tls.trustStorePassword }}
+            - name: NATS_TLS_KEY_STORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nats-monitor.fullname" . }}-nats-tls
+                  key: key-store-password
+            - name: NATS_TLS_KEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nats-monitor.fullname" . }}-nats-tls
+                  key: key-password
+            - name: NATS_TLS_TRUST_STORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nats-monitor.fullname" . }}-nats-tls
+                  key: trust-store-password
+            {{- else }}
+            - name: NATS_TLS_KEY_STORE_PASSWORD
+              value: ""
+            - name: NATS_TLS_KEY_PASSWORD
+              value: ""
+            - name: NATS_TLS_TRUST_STORE_PASSWORD
+              value: ""
+            {{- end }}
             {{- if .Values.nats.username }}
             - name: NATS_USERNAME
               valueFrom:

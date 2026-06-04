@@ -1,0 +1,83 @@
+services:
+  nats:
+    image: nats:2-alpine
+    container_name: nats-monitoring-local
+    command:
+      - "--name=nats-local"
+      - "--jetstream"
+      - "--store_dir=/data/jetstream"
+      - "--http_port=8222"
+      - "--user=local"
+      - "--pass=local"
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nats-monitoring-app-local
+    depends_on:
+      nats:
+        condition: service_started
+      nats-seed:
+        condition: service_completed_successfully
+    environment:
+      SERVER_PORT: "8080"
+      SERVER_CONTEXT_PATH: "/nats-monitoring"
+      NATS_MONITORING_URL: "http://nats:8222"
+      NATS_SERVER_URL: "nats://nats:4222"
+      NATS_USERNAME: "local"
+      NATS_PASSWORD: "local"
+      NATS_SYSTEM_EVENTS_ENABLED: "true"
+      NATS_POLL_INTERVAL: "5"
+      NATS_SNAPSHOT_RETENTION_HOURS: "24"
+      NATS_TLS_ENABLED: "false"
+      NATS_TLS_KEY_STORE_PATH: ""
+      NATS_TLS_KEY_STORE_PASSWORD: ""
+      NATS_TLS_KEY_STORE_TYPE: "PKCS12"
+      NATS_TLS_KEY_PASSWORD: ""
+      NATS_TLS_TRUST_STORE_PATH: ""
+      NATS_TLS_TRUST_STORE_PASSWORD: ""
+      NATS_TLS_TRUST_STORE_TYPE: "PKCS12"
+      NATS_TLS_PROTOCOL: "TLS"
+      ALERTING_ENABLED: "true"
+      H2_CONSOLE_ENABLED: "true"
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+    ports:
+      - "8080:8080"
+    volumes:
+      - app-data:/app/data
+    restart: unless-stopped
+
+  nats-seed:
+    image: natsio/nats-box:latest
+    container_name: nats-seed-local
+    depends_on:
+      - nats
+    environment:
+      NATS_URL: "nats://local:local@nats:4222"
+    volumes:
+      - ./docker/nats/seed.sh:/seed/seed.sh:ro
+    entrypoint: ["sh", "/seed/seed.sh"]
+    restart: "no"
+
+  nats-box:
+    image: natsio/nats-box:latest
+    container_name: nats-box-local
+    depends_on:
+      - nats
+    environment:
+      NATS_URL: "nats://local:local@nats:4222"
+    profiles:
+      - tools
+    entrypoint: ["sleep", "infinity"]
+
+volumes:
+  nats-data:
+  app-data:
