@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Diagnostic')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header">
+        <h1>Diagnostic</h1>
+        <p>Health score, active incidents and recent NATS events</p>
+    </div>
+
+    <div class="row g-3 mb-4" th:if="${diagnostic != null}">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon" th:classappend="${diagnostic.status().name() == 'OK'} ? 'green' : (${diagnostic.status().name() == 'DEGRADED'} ? 'yellow' : 'red')"><i class="bi bi-heart-pulse"></i></div>
+                <div class="metric-value" th:text="${diagnostic.score()}">0</div>
+                <div class="metric-label">Health Score</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon blue"><i class="bi bi-speedometer"></i></div>
+                <div class="metric-value" th:text="|${diagnostic.healthLatencyMs()} ms|">0 ms</div>
+                <div class="metric-label">Health Latency</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon" th:classappend="${diagnostic.jetStreamEnabled()} ? 'green' : 'yellow'"><i class="bi bi-database"></i></div>
+                <div class="metric-value" th:text="${diagnostic.jetStreamEnabled()} ? 'ON' : 'OFF'">OFF</div>
+                <div class="metric-label">JetStream</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon purple"><i class="bi bi-hdd-network"></i></div>
+                <div class="metric-value" style="font-size: 1rem;" th:text="${diagnostic.serverName() != null ? diagnostic.serverName() : diagnostic.serverId()}">-</div>
+                <div class="metric-label">Server</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card mb-4" th:if="${diagnostic != null}">
+        <div class="data-card-header">
+            <h5><i class="bi bi-list-check me-2"></i>Checks</h5>
+            <span class="badge-status" th:classappend="${diagnostic.status().name() == 'OK'} ? 'healthy' : (${diagnostic.status().name() == 'DEGRADED'} ? 'warning' : 'danger')" th:text="${diagnostic.status()}">OK</span>
+        </div>
+        <div class="data-card-body p-0">
+            <table class="table-dark-custom">
+                <thead><tr><th>Check</th><th>Status</th><th>Message</th></tr></thead>
+                <tbody>
+                <tr th:each="check : ${diagnostic.checks()}">
+                    <td th:text="${check.name()}">Check</td>
+                    <td><span class="badge-status" th:classappend="${check.status().name() == 'OK'} ? 'healthy' : (${check.status().name() == 'DEGRADED'} ? 'warning' : 'danger')" th:text="${check.status()}">OK</span></td>
+                    <td th:text="${check.message()}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="data-card">
+                <div class="data-card-header"><h5><i class="bi bi-exclamation-triangle me-2"></i>Open Incidents</h5></div>
+                <div class="data-card-body p-0">
+                    <div class="empty-state" th:if="${#lists.isEmpty(incidents)}"><i class="bi bi-check-circle d-block"></i><p>No open incidents</p></div>
+                    <table class="table-dark-custom" th:if="${!#lists.isEmpty(incidents)}">
+                        <thead><tr><th>Severity</th><th>Type</th><th>Resource</th><th>Count</th></tr></thead>
+                        <tbody>
+                        <tr th:each="incident : ${incidents}">
+                            <td><span class="badge-status" th:classappend="${incident.severity.name() == 'CRITICAL'} ? 'danger' : (${incident.severity.name() == 'WARNING'} ? 'warning' : 'info')" th:text="${incident.severity}">WARNING</span></td>
+                            <td th:text="${incident.type}">-</td>
+                            <td class="truncatable" th:text="${incident.resource}" th:title="${incident.resource}">-</td>
+                            <td th:text="${incident.eventCount}">1</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="data-card">
+                <div class="data-card-header"><h5><i class="bi bi-broadcast me-2"></i>Recent Events</h5></div>
+                <div class="data-card-body p-0">
+                    <div class="empty-state" th:if="${#lists.isEmpty(events)}"><i class="bi bi-broadcast d-block"></i><p>No events captured</p></div>
+                    <table class="table-dark-custom" th:if="${!#lists.isEmpty(events)}">
+                        <thead><tr><th>Time</th><th>Category</th><th>Subject</th></tr></thead>
+                        <tbody>
+                        <tr th:each="event : ${events}">
+                            <td style="font-size: 0.8rem;" th:text="${#temporals.format(event.receivedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                            <td><span class="badge-status info" th:text="${event.category}">EVENT</span></td>
+                            <td class="truncatable" th:text="${event.subject}" th:title="${event.subject}">-</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

@@ -16,9 +16,13 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
   h2:
     console:
       enabled: ${H2_CONSOLE_ENABLED:false}
@@ -38,7 +42,12 @@ spring:
 nats:
   monitoring:
     url: ${NATS_MONITORING_URL:http://localhost:8222}
+    server-url: ${NATS_SERVER_URL:nats://localhost:4222}
+    username: ${NATS_USERNAME:}
+    password: ${NATS_PASSWORD:}
+    system-events-enabled: ${NATS_SYSTEM_EVENTS_ENABLED:false}
     poll-interval-seconds: ${NATS_POLL_INTERVAL:5}
+    snapshot-retention-hours: ${NATS_SNAPSHOT_RETENTION_HOURS:24}
 
 # Alerting defaults
 alerting:

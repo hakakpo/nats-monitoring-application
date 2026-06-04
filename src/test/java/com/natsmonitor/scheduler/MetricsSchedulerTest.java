@@ -3,6 +3,7 @@ package com.natsmonitor.scheduler;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.service.AlertService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -19,9 +20,10 @@ class MetricsSchedulerTest {
 
     private final NatsMonitoringService natsService = mock(NatsMonitoringService.class);
     private final AlertService alertService = mock(AlertService.class);
+    private final SnapshotService snapshotService = mock(SnapshotService.class);
     private final SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
 
-    private final MetricsScheduler scheduler = new MetricsScheduler(natsService, alertService, messagingTemplate);
+    private final MetricsScheduler scheduler = new MetricsScheduler(natsService, alertService, snapshotService, messagingTemplate);
 
     @Test
     void shouldPublishMetricsWhenServerInfoIsAvailable() {
@@ -83,3 +85,4 @@ class MetricsSchedulerTest {
         assertTrue(true);
     }
 }
+

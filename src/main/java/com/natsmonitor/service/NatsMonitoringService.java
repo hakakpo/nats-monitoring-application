@@ -11,6 +11,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +78,7 @@ public class NatsMonitoringService {
     public StreamListResponse getStreams() {
         try {
             String responseBody = restClient.get()
-                    .uri("/jsz?streams=true&consumers=true")
+                    .uri("/jsz?streams=true&consumers=true&config=true&raft=true")
                     .retrieve()
                     .body(String.class);
             return responseBody != null ? parseStreamsResponse(responseBody) : null;
@@ -162,6 +164,33 @@ public class NatsMonitoringService {
         }
     }
 
+    public ConnectionsResponse getConnections(String state,
+                                              String sort,
+                                              String subs,
+                                              Integer offset,
+                                              Integer limit,
+                                              Long cid) {
+        try {
+            String responseBody = restClient.get()
+                    .uri(uriBuilder -> {
+                        var builder = uriBuilder.path("/connz");
+                        if (state != null && !state.isBlank()) builder.queryParam("state", state);
+                        if (sort != null && !sort.isBlank()) builder.queryParam("sort", sort);
+                        builder.queryParam("subs", subs == null || subs.isBlank() ? "true" : subs);
+                        if (offset != null) builder.queryParam("offset", offset);
+                        if (limit != null) builder.queryParam("limit", limit);
+                        if (cid != null) builder.queryParam("cid", cid);
+                        return builder.build();
+                    })
+                    .retrieve()
+                    .body(String.class);
+            return responseBody != null ? parseConnectionsResponse(responseBody) : null;
+        } catch (RestClientException | IOException e) {
+            log.error("Failed to fetch filtered connections: {}", e.getMessage());
+            return null;
+        }
+    }
+
     ConnectionsResponse parseConnectionsResponse(String responseBody) throws IOException {
         return objectMapper.readValue(responseBody, ConnectionsResponse.class);
     }
@@ -232,12 +261,22 @@ public class NatsMonitoringService {
     }
 
     public boolean isConnected() {
+        return checkHealth(false).success();
+    }
+
+    public HealthProbe checkHealth(boolean requireJetStream) {
+        Instant start = Instant.now();
         try {
-            restClient.get().uri("/healthz").retrieve().body(String.class);
-            return true;
+            String uri = requireJetStream ? "/healthz?js-enabled-only=true" : "/healthz";
+            String body = restClient.get().uri(uri).retrieve().body(String.class);
+            return new HealthProbe(true, elapsedMillis(start), body, null);
         } catch (Exception e) {
-            return false;
+            return new HealthProbe(false, elapsedMillis(start), null, e.getMessage());
         }
+    }
+
+    private long elapsedMillis(Instant start) {
+        return Math.max(0, Duration.between(start, Instant.now()).toMillis());
     }
 
     public void updateRateMetrics(ServerInfo info) {

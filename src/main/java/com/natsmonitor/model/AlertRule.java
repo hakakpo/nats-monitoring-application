@@ -47,6 +47,10 @@ public class AlertRule {
     @Column(nullable = false)
     private long threshold;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Incident.Severity severity = Incident.Severity.WARNING;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Valid email is required")
     @Column(nullable = false)
@@ -74,6 +78,39 @@ public class AlertRule {
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public AlertType getType() { return type; }
+    public void setType(AlertType type) { this.type = type; }
+    public String getStreamName() { return streamName; }
+    public void setStreamName(String streamName) { this.streamName = streamName; }
+    public String getConsumerName() { return consumerName; }
+    public void setConsumerName(String consumerName) { this.consumerName = consumerName; }
+    public long getThreshold() { return threshold; }
+    public void setThreshold(long threshold) { this.threshold = threshold; }
+    public Incident.Severity getSeverity() { return severity; }
+    public void setSeverity(Incident.Severity severity) { this.severity = severity; }
+    public String getEmailRecipient() { return emailRecipient; }
+    public void setEmailRecipient(String emailRecipient) { this.emailRecipient = emailRecipient; }
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public boolean isEmailEnabled() { return emailEnabled; }
+    public void setEmailEnabled(boolean emailEnabled) { this.emailEnabled = emailEnabled; }
+    public String getWebhookUrl() { return webhookUrl; }
+    public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+    public boolean isWebhookEnabled() { return webhookEnabled; }
+    public void setWebhookEnabled(boolean webhookEnabled) { this.webhookEnabled = webhookEnabled; }
+    public LocalDateTime getLastTriggered() { return lastTriggered; }
+    public void setLastTriggered(LocalDateTime lastTriggered) { this.lastTriggered = lastTriggered; }
+    public LocalDateTime getLastNotified() { return lastNotified; }
+    public void setLastNotified(LocalDateTime lastNotified) { this.lastNotified = lastNotified; }
+    public int getCooldownMinutes() { return cooldownMinutes; }
+    public void setCooldownMinutes(int cooldownMinutes) { this.cooldownMinutes = cooldownMinutes; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     @Override
     public boolean equals(Object other) {

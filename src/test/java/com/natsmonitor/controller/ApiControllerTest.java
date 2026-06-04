@@ -4,7 +4,11 @@ import com.natsmonitor.dto.*;
 import com.natsmonitor.model.AlertHistory;
 import com.natsmonitor.model.AlertRule;
 import com.natsmonitor.service.AlertService;
+import com.natsmonitor.service.HealthDiagnosticService;
+import com.natsmonitor.service.IncidentService;
+import com.natsmonitor.service.NatsEventService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -27,6 +31,10 @@ class ApiControllerTest {
 
     private final NatsMonitoringService natsService = mock(NatsMonitoringService.class);
     private final AlertService alertService = mock(AlertService.class);
+    private final HealthDiagnosticService healthDiagnosticService = mock(HealthDiagnosticService.class);
+    private final IncidentService incidentService = mock(IncidentService.class);
+    private final NatsEventService eventService = mock(NatsEventService.class);
+    private final SnapshotService snapshotService = mock(SnapshotService.class);
 
     private MockMvc mockMvc;
 
@@ -62,7 +70,14 @@ class ApiControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new ApiController(natsService, alertService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new ApiController(
+                natsService,
+                alertService,
+                healthDiagnosticService,
+                incidentService,
+                eventService,
+                snapshotService
+        )).build();
     }
 
     @Test
@@ -412,3 +427,4 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.enabled").value(false));
     }
 }
+

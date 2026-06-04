@@ -466,7 +466,7 @@ class NatsMonitoringServiceTest {
                 }
                 """);
 
-        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true");
+        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true");
         RestClient.ResponseSpec streamsResponse = stubRetrieve(streamsHeaders);
         when(streamsResponse.body(String.class)).thenReturn("""
                 {
@@ -560,7 +560,7 @@ class NatsMonitoringServiceTest {
         RestClient.ResponseSpec jszResponse = stubRetrieve(stubUri(requestSpec, "/jsz"));
         when(jszResponse.body(String.class)).thenThrow(new RestClientException("boom"));
 
-        RestClient.ResponseSpec streamsResponse = stubRetrieve(stubUri(requestSpec, "/jsz?streams=true&consumers=true"));
+        RestClient.ResponseSpec streamsResponse = stubRetrieve(stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true"));
         when(streamsResponse.body(String.class)).thenThrow(new RestClientException("boom"));
 
         RestClient.ResponseSpec connzResponse = stubRetrieve(stubUri(requestSpec, "/connz?subs=true"));
@@ -730,7 +730,7 @@ class NatsMonitoringServiceTest {
         RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
         when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
 
-        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true");
+        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true");
         RestClient.ResponseSpec streamsResponse = stubRetrieve(streamsHeaders);
         when(streamsResponse.body(String.class)).thenReturn(null);
 
@@ -793,3 +793,4 @@ class NatsMonitoringServiceTest {
         assertThrows(UnsupportedOperationException.class, () -> byteHistory.put("new", List.of()));
     }
 }
+

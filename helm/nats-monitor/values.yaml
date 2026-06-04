@@ -18,7 +18,12 @@ serviceAccount:
 # NATS configuration - override with env vars
 nats:
   monitoringUrl: "http://nats:8222"
+  serverUrl: "nats://nats:4222"
+  username: ""
+  password: ""
+  systemEventsEnabled: false
   pollIntervalSeconds: 5
+  snapshotRetentionHours: 24
 
 # Alerting configuration
 alerting:

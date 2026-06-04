@@ -38,8 +38,26 @@ spec:
               value: {{ .Values.server.contextPath | quote }}
             - name: NATS_MONITORING_URL
               value: {{ .Values.nats.monitoringUrl | quote }}
+            - name: NATS_SERVER_URL
+              value: {{ .Values.nats.serverUrl | quote }}
+            - name: NATS_SYSTEM_EVENTS_ENABLED
+              value: {{ .Values.nats.systemEventsEnabled | quote }}
             - name: NATS_POLL_INTERVAL
               value: {{ .Values.nats.pollIntervalSeconds | quote }}
+            - name: NATS_SNAPSHOT_RETENTION_HOURS
+              value: {{ .Values.nats.snapshotRetentionHours | quote }}
+            {{- if .Values.nats.username }}
+            - name: NATS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nats-monitor.fullname" . }}-nats
+                  key: username
+            - name: NATS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nats-monitor.fullname" . }}-nats
+                  key: password
+            {{- end }}
             - name: ALERTING_ENABLED
               value: {{ .Values.alerting.enabled | quote }}
             - name: ALERT_CHECK_INTERVAL

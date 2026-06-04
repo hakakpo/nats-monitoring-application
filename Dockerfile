@@ -20,6 +20,6 @@ USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget -qO- http://localhost:8080/actuator/health || exit 1
+    CMD sh -c 'wget -qO- "http://localhost:${SERVER_PORT:-8080}${SERVER_CONTEXT_PATH:-/nats-monitoring}/actuator/health" || exit 1'
 
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

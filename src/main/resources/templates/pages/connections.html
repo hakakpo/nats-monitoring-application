@@ -441,6 +441,47 @@
                 </table>
             </div>
         </div>
+
+        <div class="data-card mt-4" th:if="${closedConnections != null}">
+            <div class="data-card-header">
+                <h5><i class="bi bi-plug-fill me-2"></i>Recently Closed Connections</h5>
+                <span class="badge-status warning" th:text="|${closedConnections.total()} retained|">0</span>
+            </div>
+            <div class="data-card-body p-0">
+                <div class="empty-state"
+                     th:if="${closedConnections.connections() == null || closedConnections.connections().isEmpty()}">
+                    <i class="bi bi-check-circle d-block"></i>
+                    <p>No closed connections reported</p>
+                </div>
+                <table class="table-dark-custom"
+                       th:if="${closedConnections.connections() != null && !closedConnections.connections().isEmpty()}">
+                    <thead>
+                    <tr>
+                        <th>CID</th>
+                        <th>Name</th>
+                        <th>IP</th>
+                        <th>Account</th>
+                        <th>Started</th>
+                        <th>Stopped</th>
+                        <th>Uptime</th>
+                        <th>Reason</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="conn : ${closedConnections.connections()}">
+                        <td th:text="${conn.cid()}">0</td>
+                        <td th:text="${conn.name() != null ? conn.name() : '-'}">-</td>
+                        <td th:text="${conn.ip()}">-</td>
+                        <td th:text="${conn.account() != null ? conn.account() : '-'}">-</td>
+                        <td class="truncatable" th:text="${conn.start() != null ? conn.start() : '-'}" th:title="${conn.start()}">-</td>
+                        <td class="truncatable" th:text="${conn.stop() != null ? conn.stop() : '-'}" th:title="${conn.stop()}">-</td>
+                        <td th:text="${conn.uptime() != null ? conn.uptime() : '-'}">-</td>
+                        <td><span class="badge-status warning" th:text="${conn.reason() != null ? conn.reason() : 'closed'}">closed</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </main>
 

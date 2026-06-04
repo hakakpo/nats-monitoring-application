@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Incidents')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header"><h1>Incidents</h1><p>Correlated alerts and operational events</p></div>
+    <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-exclamation-triangle me-2"></i>Incident Timeline</h5><span class="badge-status info" th:text="|${#lists.size(incidents)} incidents|">0</span></div>
+        <div class="data-card-body p-0">
+            <div class="empty-state" th:if="${#lists.isEmpty(incidents)}"><i class="bi bi-check-circle d-block"></i><p>No incidents recorded</p></div>
+            <table class="table-dark-custom" th:if="${!#lists.isEmpty(incidents)}">
+                <thead><tr><th>Status</th><th>Severity</th><th>Type</th><th>Resource</th><th>Last Seen</th><th>Count</th><th>Message</th></tr></thead>
+                <tbody>
+                <tr th:each="incident : ${incidents}">
+                    <td><span class="badge-status" th:classappend="${incident.status.name() == 'OPEN'} ? 'warning' : 'healthy'" th:text="${incident.status}">OPEN</span></td>
+                    <td><span class="badge-status" th:classappend="${incident.severity.name() == 'CRITICAL'} ? 'danger' : (${incident.severity.name() == 'WARNING'} ? 'warning' : 'info')" th:text="${incident.severity}">WARNING</span></td>
+                    <td th:text="${incident.type}">-</td>
+                    <td class="truncatable" th:text="${incident.resource}" th:title="${incident.resource}">-</td>
+                    <td style="font-size: 0.8rem;" th:text="${#temporals.format(incident.lastSeen, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                    <td th:text="${incident.eventCount}">1</td>
+                    <td class="truncatable" th:text="${incident.lastMessage}" th:title="${incident.lastMessage}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

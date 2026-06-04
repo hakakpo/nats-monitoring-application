@@ -1,5 +1,6 @@
 package com.natsmonitor.service;
 
+import com.natsmonitor.dto.ConsumerInfo;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.dto.StreamInfo;
 import com.natsmonitor.dto.StreamListResponse;
@@ -37,11 +38,10 @@ public class AlertService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertService.class);
     private static final String ALERT_RULE_NOT_FOUND = "Alert rule not found: ";
-    private static final String UNSUPPORTED_ALERT_LOG = "{} alert '{}' is not supported by the current monitoring implementation";
-
     private final AlertRuleRepository alertRuleRepository;
     private final AlertHistoryRepository alertHistoryRepository;
     private final NatsMonitoringService natsService;
+    private final IncidentService incidentService;
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate;
 
@@ -51,10 +51,12 @@ public class AlertService {
     public AlertService(AlertRuleRepository alertRuleRepository,
                         AlertHistoryRepository alertHistoryRepository,
                         NatsMonitoringService natsService,
+                        IncidentService incidentService,
                         JavaMailSender mailSender) {
         this.alertRuleRepository = alertRuleRepository;
         this.alertHistoryRepository = alertHistoryRepository;
         this.natsService = natsService;
+        this.incidentService = incidentService;
         this.mailSender = mailSender;
         this.restTemplate = new RestTemplateBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
@@ -73,6 +75,9 @@ public class AlertService {
         }
         if (rule.getCooldownMinutes() <= 0) {
             rule.setCooldownMinutes(15);
+        }
+        if (rule.getSeverity() == null) {
+            rule.setSeverity(com.natsmonitor.model.Incident.Severity.WARNING);
         }
         return alertRuleRepository.save(rule);
     }
@@ -136,10 +141,7 @@ public class AlertService {
     private long getCurrentValueForRule(AlertRule rule) {
         return switch (rule.getType()) {
             case STUCK_MESSAGES, STREAM_MESSAGE_COUNT -> getStreamMessageCount(rule.getStreamName());
-            case CONSUMER_LAG -> {
-                log.warn(UNSUPPORTED_ALERT_LOG, "Consumer lag", rule.getName());
-                yield -1;
-            }
+            case CONSUMER_LAG -> getConsumerMetric(rule, ConsumerMetric.LAG);
             case SLOW_CONSUMERS -> {
                 ServerInfo info = natsService.getServerInfo();
                 yield info != null ? info.slowConsumers() : -1;
@@ -148,15 +150,42 @@ public class AlertService {
                 ServerInfo info = natsService.getServerInfo();
                 yield info != null ? info.mem() / (1024 * 1024) : -1; // MB
             }
-            case HIGH_PENDING_ACKS -> {
-                log.warn(UNSUPPORTED_ALERT_LOG, "High pending ACKs", rule.getName());
-                yield -1;
-            }
+            case HIGH_PENDING_ACKS -> getConsumerMetric(rule, ConsumerMetric.ACK_PENDING);
             case CONNECTION_COUNT -> {
                 ServerInfo info = natsService.getServerInfo();
                 yield info != null ? info.connections() : -1;
             }
         };
+    }
+
+    private long getConsumerMetric(AlertRule rule, ConsumerMetric metric) {
+        StreamListResponse streams = natsService.getStreams();
+        if (streams == null || streams.streams() == null) {
+            return -1;
+        }
+
+        boolean hasStreamFilter = rule.getStreamName() != null && !rule.getStreamName().isBlank();
+        boolean hasConsumerFilter = rule.getConsumerName() != null && !rule.getConsumerName().isBlank();
+        long total = 0;
+        boolean matched = false;
+
+        for (StreamInfo stream : streams.streams()) {
+            if (stream == null || (hasStreamFilter && !rule.getStreamName().equals(stream.name()))) {
+                continue;
+            }
+            for (ConsumerInfo consumer : stream.safeConsumers()) {
+                if (consumer == null || (hasConsumerFilter && !rule.getConsumerName().equals(consumer.name()))) {
+                    continue;
+                }
+                matched = true;
+                total += switch (metric) {
+                    case LAG -> Math.max(0, consumer.lag());
+                    case ACK_PENDING -> Math.max(0, consumer.numAckPending());
+                };
+            }
+        }
+
+        return matched ? total : -1;
     }
 
     private long getStreamMessageCount(String streamName) {
@@ -200,6 +229,7 @@ public class AlertService {
         history.setConsumerName(rule.getConsumerName());
         history.setCurrentValue(currentValue);
         history.setThreshold(rule.getThreshold());
+        history.setSeverity(rule.getSeverity());
         history.setEmailSentTo(rule.getEmailRecipient());
         history.setTriggeredAt(LocalDateTime.now());
 
@@ -211,6 +241,7 @@ public class AlertService {
         history.setErrorMessage(resolveNotificationError(rule, emailSent, webhookSent));
 
         alertHistoryRepository.save(history);
+        incidentService.recordAlert(history);
 
         rule.setLastTriggered(LocalDateTime.now());
         if (emailSent || webhookSent) {
@@ -382,8 +413,13 @@ public class AlertService {
 
     private boolean isSupportedType(AlertRule.AlertType type) {
         return switch (type) {
-            case STUCK_MESSAGES, SLOW_CONSUMERS, HIGH_MEMORY, STREAM_MESSAGE_COUNT, CONNECTION_COUNT -> true;
-            case CONSUMER_LAG, HIGH_PENDING_ACKS -> false;
+            case STUCK_MESSAGES, SLOW_CONSUMERS, HIGH_MEMORY, STREAM_MESSAGE_COUNT,
+                 CONNECTION_COUNT, CONSUMER_LAG, HIGH_PENDING_ACKS -> true;
         };
+    }
+
+    private enum ConsumerMetric {
+        LAG,
+        ACK_PENDING
     }
 }

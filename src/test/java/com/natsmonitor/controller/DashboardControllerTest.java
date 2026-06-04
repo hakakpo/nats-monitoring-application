@@ -4,7 +4,11 @@ import com.natsmonitor.dto.*;
 import com.natsmonitor.model.AlertHistory;
 import com.natsmonitor.model.AlertRule;
 import com.natsmonitor.service.AlertService;
+import com.natsmonitor.service.HealthDiagnosticService;
+import com.natsmonitor.service.IncidentService;
+import com.natsmonitor.service.NatsEventService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ExtendedModelMap;
 
@@ -19,7 +23,18 @@ class DashboardControllerTest {
 
     private final NatsMonitoringService natsService = mock(NatsMonitoringService.class);
     private final AlertService alertService = mock(AlertService.class);
-    private final DashboardController controller = new DashboardController(natsService, alertService);
+    private final HealthDiagnosticService healthDiagnosticService = mock(HealthDiagnosticService.class);
+    private final IncidentService incidentService = mock(IncidentService.class);
+    private final NatsEventService eventService = mock(NatsEventService.class);
+    private final SnapshotService snapshotService = mock(SnapshotService.class);
+    private final DashboardController controller = new DashboardController(
+            natsService,
+            alertService,
+            healthDiagnosticService,
+            incidentService,
+            eventService,
+            snapshotService
+    );
 
     private static ServerInfo serverInfo() {
         return new ServerInfo("server-1", "n1", "2.10.29", "go1.24.2", "127.0.0.1", 4222, 1048576, 1,
@@ -127,7 +142,8 @@ class DashboardControllerTest {
         AccountStatzResponse accStatz = new AccountStatzResponse("server-1", "now", List.of());
         LeafzResponse leafz = new LeafzResponse("server-1", "now", 0, List.of());
         GatewayzResponse gatewayz = new GatewayzResponse("server-1", "now", "gw", "host", 7222, Map.of(), Map.of());
-        when(natsService.getConnections()).thenReturn(connections);
+        when(natsService.getConnections(null, "pending", "detail", null, 1024, null)).thenReturn(connections);
+        when(natsService.getConnections("closed", "stop", "false", null, 100, null)).thenReturn(connections);
         when(natsService.getRoutez()).thenReturn(routez);
         when(natsService.getSubsz()).thenReturn(subsz);
         when(natsService.getAccountStatz()).thenReturn(accStatz);
@@ -191,3 +207,4 @@ class DashboardControllerTest {
         assertEquals("alerts", model.getAttribute("activePage"));
     }
 }
+

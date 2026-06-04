@@ -1,5 +1,6 @@
 package com.natsmonitor.service;
 
+import com.natsmonitor.dto.ConsumerInfo;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.dto.StreamInfo;
 import com.natsmonitor.dto.StreamListResponse;
@@ -48,6 +49,9 @@ class AlertServiceTest {
     private NatsMonitoringService natsService;
 
     @Mock
+    private IncidentService incidentService;
+
+    @Mock
     private JavaMailSender mailSender;
 
     @InjectMocks
@@ -75,6 +79,27 @@ class AlertServiceTest {
         return new StreamListResponse(1, 0, 1, List.of(
                 new StreamInfo(streamName, null, new StreamInfo.StreamState(messages, 256, 1, messages, 0,
                         null, null, 0, 0), null, null)
+        ));
+    }
+
+    private static StreamListResponse consumerStreamsResponse(String streamName, String consumerName,
+                                                              long delivered, long ackFloor,
+                                                              long pending, long ackPending) {
+        ConsumerInfo consumer = new ConsumerInfo(
+                streamName,
+                consumerName,
+                new ConsumerInfo.ConsumerConfig(consumerName, null, "all", "explicit", 0, -1, null, "instant"),
+                new ConsumerInfo.SequenceInfo(10, delivered),
+                new ConsumerInfo.SequenceInfo(8, ackFloor),
+                ackPending,
+                0,
+                0,
+                pending,
+                "2026-04-23T10:00:00Z"
+        );
+        return new StreamListResponse(1, 0, 1, List.of(
+                new StreamInfo(streamName, null, new StreamInfo.StreamState(0, 0, 1, delivered, 1,
+                        null, null, 0, 0), null, List.of(consumer))
         ));
     }
 
@@ -122,8 +147,9 @@ class AlertServiceTest {
         missingWebhookUrl.setWebhookEnabled(true);
         assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(missingWebhookUrl));
 
-        AlertRule unsupported = baseRule(AlertRule.AlertType.CONSUMER_LAG, 10);
-        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(unsupported));
+        AlertRule consumerLag = baseRule(AlertRule.AlertType.CONSUMER_LAG, 10);
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        assertEquals(AlertRule.AlertType.CONSUMER_LAG, alertService.saveRule(consumerLag).getType());
     }
 
     @Test
@@ -331,26 +357,33 @@ class AlertServiceTest {
     }
 
     @Test
-    void shouldSkipConsumerLagRule() {
-        AlertRule rule = baseRule(AlertRule.AlertType.CONSUMER_LAG, 1);
-        rule.setType(AlertRule.AlertType.CONSUMER_LAG);
-        // Force validation to skip by setting directly
+    void shouldEvaluateConsumerLagRule() {
+        AlertRule rule = baseRule(AlertRule.AlertType.CONSUMER_LAG, 10);
+        rule.setStreamName("ORDERS");
+        rule.setConsumerName("worker");
+        rule.setEmailEnabled(false);
         when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getStreams()).thenReturn(consumerStreamsResponse("ORDERS", "worker", 50, 25, 5, 2));
 
         alertService.evaluateAllRules();
 
-        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+        verify(alertHistoryRepository).save(historyCaptor.capture());
+        assertEquals(25, historyCaptor.getValue().getCurrentValue());
     }
 
     @Test
-    void shouldSkipHighPendingAcksRule() {
-        AlertRule rule = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 1);
-        rule.setType(AlertRule.AlertType.HIGH_PENDING_ACKS);
+    void shouldEvaluateHighPendingAcksRule() {
+        AlertRule rule = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 2);
+        rule.setStreamName("ORDERS");
+        rule.setConsumerName("worker");
+        rule.setEmailEnabled(false);
         when(alertRuleRepository.findByEnabledTrue()).thenReturn(List.of(rule));
+        when(natsService.getStreams()).thenReturn(consumerStreamsResponse("ORDERS", "worker", 50, 45, 0, 7));
 
         alertService.evaluateAllRules();
 
-        verify(alertHistoryRepository, never()).save(any(AlertHistory.class));
+        verify(alertHistoryRepository).save(historyCaptor.capture());
+        assertEquals(7, historyCaptor.getValue().getCurrentValue());
     }
 
     @Test
@@ -430,9 +463,13 @@ class AlertServiceTest {
     }
 
     @Test
-    void shouldRejectUnsupportedHighPendingAcksType() {
-        AlertRule unsupported = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 10);
-        assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(unsupported));
+    void shouldSaveHighPendingAcksType() {
+        AlertRule rule = baseRule(AlertRule.AlertType.HIGH_PENDING_ACKS, 10);
+        when(alertRuleRepository.save(any(AlertRule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AlertRule saved = alertService.saveRule(rule);
+
+        assertEquals(AlertRule.AlertType.HIGH_PENDING_ACKS, saved.getType());
     }
 
     @Test
@@ -442,3 +479,4 @@ class AlertServiceTest {
         assertThrows(IllegalArgumentException.class, () -> alertService.saveRule(rule));
     }
 }
+

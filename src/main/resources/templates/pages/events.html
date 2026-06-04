@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('NATS Monitor - Events')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+
+<main class="main-content">
+    <div class="page-header"><h1>Events</h1><p>NATS $SYS and JetStream advisory events</p></div>
+    <div class="data-card">
+        <div class="data-card-header"><h5><i class="bi bi-broadcast me-2"></i>Recent Events</h5><span class="badge-status info" th:text="|${#lists.size(events)} events|">0</span></div>
+        <div class="data-card-body p-0">
+            <div class="empty-state" th:if="${#lists.isEmpty(events)}"><i class="bi bi-broadcast d-block"></i><p>No events captured. Enable nats.monitoring.system-events-enabled and configure a system account user.</p></div>
+            <table class="table-dark-custom" th:if="${!#lists.isEmpty(events)}">
+                <thead><tr><th>Time</th><th>Severity</th><th>Category</th><th>Subject</th><th>Resource</th><th>Summary</th></tr></thead>
+                <tbody>
+                <tr th:each="event : ${events}">
+                    <td style="font-size: 0.8rem;" th:text="${#temporals.format(event.receivedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                    <td><span class="badge-status" th:classappend="${event.severity.name() == 'CRITICAL'} ? 'danger' : (${event.severity.name() == 'WARNING'} ? 'warning' : 'info')" th:text="${event.severity}">INFO</span></td>
+                    <td th:text="${event.category}">-</td>
+                    <td class="truncatable" th:text="${event.subject}" th:title="${event.subject}">-</td>
+                    <td class="truncatable" th:text="${event.resource}" th:title="${event.resource}">-</td>
+                    <td class="truncatable" th:text="${event.summary}" th:title="${event.summary}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: scripts}"></footer>
+</body>
+</html>

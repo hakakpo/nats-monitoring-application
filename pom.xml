@@ -20,6 +20,7 @@
     <properties>
         <java.version>21</java.version>
         <jacoco.version>0.8.12</jacoco.version>
+        <jnats.version>2.25.3</jnats.version>
     </properties>
 
     <dependencies>
@@ -51,6 +52,17 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.nats</groupId>
+            <artifactId>jnats</artifactId>
+            <version>${jnats.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
         </dependency>
 
         <!-- H2 for embedded storage of alert rules -->

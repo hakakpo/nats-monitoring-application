@@ -31,6 +31,18 @@
         <li th:classappend="${activePage == 'connections'} ? 'active'">
             <a th:href="@{/connections}"><i class="bi bi-plug"></i><span>Connections</span></a>
         </li>
+        <li th:classappend="${activePage == 'diagnostic'} ? 'active'">
+            <a th:href="@{/diagnostic}"><i class="bi bi-heart-pulse"></i><span>Diagnostic</span></a>
+        </li>
+        <li th:classappend="${activePage == 'incidents'} ? 'active'">
+            <a th:href="@{/incidents}"><i class="bi bi-exclamation-triangle"></i><span>Incidents</span></a>
+        </li>
+        <li th:classappend="${activePage == 'events'} ? 'active'">
+            <a th:href="@{/events}"><i class="bi bi-broadcast"></i><span>Events</span></a>
+        </li>
+        <li th:classappend="${activePage == 'snapshots'} ? 'active'">
+            <a th:href="@{/snapshots}"><i class="bi bi-clock-history"></i><span>Snapshots</span></a>
+        </li>
         <li th:classappend="${activePage == 'alerts'} ? 'active'">
             <a th:href="@{/alerts}"><i class="bi bi-bell"></i><span>Alerts</span></a>
         </li>

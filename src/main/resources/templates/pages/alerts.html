@@ -37,6 +37,8 @@
                                   th:if="${rule.streamName != null && !rule.streamName.isBlank()}"
                                   th:text="|Stream: ${rule.streamName}|">Stream</span>
                             <span class="badge-status danger" th:text="|Threshold: ${rule.threshold}|">Threshold</span>
+                            <span class="badge-status" th:classappend="${rule.severity.name() == 'CRITICAL'} ? 'danger' : (${rule.severity.name() == 'WARNING'} ? 'warning' : 'info')"
+                                  th:text="${rule.severity}">WARNING</span>
                             <span class="badge-status" th:classappend="${rule.emailEnabled} ? 'healthy' : 'warning'"
                                   th:text="${rule.emailEnabled} ? 'Email ON' : 'Email OFF'">Email ON</span>
                             <span class="badge-status" th:classappend="${rule.webhookEnabled} ? 'healthy' : 'warning'"
@@ -145,15 +147,30 @@
                         <label class="form-label">Alert Type</label>
                         <select class="form-select" id="ruleType" required>
                             <option value="STUCK_MESSAGES">Stuck Messages</option>
+                            <option value="CONSUMER_LAG">Consumer Lag</option>
                             <option value="SLOW_CONSUMERS">Slow Consumers</option>
                             <option value="HIGH_MEMORY">High Memory (MB)</option>
+                            <option value="HIGH_PENDING_ACKS">High Pending ACKs</option>
                             <option value="STREAM_MESSAGE_COUNT">Stream Message Count</option>
                             <option value="CONNECTION_COUNT">Connection Count</option>
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Severity</label>
+                        <select class="form-select" id="ruleSeverity" required>
+                            <option value="WARNING">Warning</option>
+                            <option value="CRITICAL">Critical</option>
+                            <option value="INFO">Info</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Stream Name (optional)</label>
                         <input class="form-control" id="ruleStream" placeholder="Leave blank for all streams"
+                               type="text">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Consumer Name (optional)</label>
+                        <input class="form-control" id="ruleConsumer" placeholder="Only for consumer lag / ack pending"
                                type="text">
                     </div>
                     <div class="mb-3">

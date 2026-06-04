@@ -2,8 +2,13 @@ package com.natsmonitor.controller;
 
 import com.natsmonitor.dto.*;
 import com.natsmonitor.model.AlertRule;
+import com.natsmonitor.model.Incident;
 import com.natsmonitor.service.AlertService;
+import com.natsmonitor.service.HealthDiagnosticService;
+import com.natsmonitor.service.IncidentService;
+import com.natsmonitor.service.NatsEventService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +26,23 @@ public class ApiController {
 
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
+    private final HealthDiagnosticService healthDiagnosticService;
+    private final IncidentService incidentService;
+    private final NatsEventService eventService;
+    private final SnapshotService snapshotService;
 
-    public ApiController(NatsMonitoringService natsService, AlertService alertService) {
+    public ApiController(NatsMonitoringService natsService,
+                         AlertService alertService,
+                         HealthDiagnosticService healthDiagnosticService,
+                         IncidentService incidentService,
+                         NatsEventService eventService,
+                         SnapshotService snapshotService) {
         this.natsService = natsService;
         this.alertService = alertService;
+        this.healthDiagnosticService = healthDiagnosticService;
+        this.incidentService = incidentService;
+        this.eventService = eventService;
+        this.snapshotService = snapshotService;
     }
 
     // --- NATS Metrics API ---
@@ -65,9 +83,48 @@ public class ApiController {
     }
 
     @GetMapping("/connections")
-    public ResponseEntity<ConnectionsResponse> connections() {
-        ConnectionsResponse connections = natsService.getConnections();
+    public ResponseEntity<ConnectionsResponse> connections(
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false, defaultValue = "true") String subs,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Long cid) {
+        ConnectionsResponse connections = hasConnectionFilters(state, sort, subs, offset, limit, cid)
+                ? natsService.getConnections(state, sort, subs, offset, limit, cid)
+                : natsService.getConnections();
         return connections != null ? ResponseEntity.ok(connections) : ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
+
+    @GetMapping("/diagnostic")
+    public ResponseEntity<HealthDiagnostic> diagnostic() {
+        return ResponseEntity.ok(healthDiagnosticService.diagnose());
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<List<?>> events(@RequestParam(defaultValue = "100") int limit) {
+        return ResponseEntity.ok(eventService.recentEvents(limit));
+    }
+
+    @GetMapping("/incidents")
+    public ResponseEntity<List<Incident>> incidents(@RequestParam(defaultValue = "100") int limit,
+                                                    @RequestParam(defaultValue = "false") boolean openOnly) {
+        return ResponseEntity.ok(openOnly
+                ? incidentService.getOpenIncidents(limit)
+                : incidentService.getRecentIncidents(limit));
+    }
+
+    @PostMapping("/incidents/{id}/resolve")
+    public ResponseEntity<Incident> resolveIncident(@PathVariable Long id) {
+        return ResponseEntity.ok(incidentService.resolveIncident(id));
+    }
+
+    @GetMapping("/snapshots")
+    public ResponseEntity<SnapshotOverview> snapshots(@RequestParam(defaultValue = "100") int limit) {
+        return ResponseEntity.ok(new SnapshotOverview(
+                snapshotService.recentServerSnapshots(limit),
+                snapshotService.recentConsumerSnapshots(limit)
+        ));
     }
 
     @GetMapping("/routes")
@@ -161,5 +218,10 @@ public class ApiController {
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(NoSuchElementException ex) {
         return ResponseEntity.status(404).body(Map.of(MESSAGE_KEY, ex.getMessage()));
+    }
+
+    private boolean hasConnectionFilters(String state, String sort, String subs, Integer offset, Integer limit, Long cid) {
+        return state != null || sort != null || offset != null || limit != null || cid != null
+                || (subs != null && !"true".equals(subs));
     }
 }

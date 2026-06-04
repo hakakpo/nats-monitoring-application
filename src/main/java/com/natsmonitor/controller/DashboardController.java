@@ -2,7 +2,11 @@ package com.natsmonitor.controller;
 
 import com.natsmonitor.dto.*;
 import com.natsmonitor.service.AlertService;
+import com.natsmonitor.service.HealthDiagnosticService;
+import com.natsmonitor.service.IncidentService;
+import com.natsmonitor.service.NatsEventService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,10 +29,23 @@ public class DashboardController {
 
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
+    private final HealthDiagnosticService healthDiagnosticService;
+    private final IncidentService incidentService;
+    private final NatsEventService eventService;
+    private final SnapshotService snapshotService;
 
-    public DashboardController(NatsMonitoringService natsService, AlertService alertService) {
+    public DashboardController(NatsMonitoringService natsService,
+                               AlertService alertService,
+                               HealthDiagnosticService healthDiagnosticService,
+                               IncidentService incidentService,
+                               NatsEventService eventService,
+                               SnapshotService snapshotService) {
         this.natsService = natsService;
         this.alertService = alertService;
+        this.healthDiagnosticService = healthDiagnosticService;
+        this.incidentService = incidentService;
+        this.eventService = eventService;
+        this.snapshotService = snapshotService;
     }
 
     @GetMapping("/")
@@ -55,6 +72,7 @@ public class DashboardController {
         model.addAttribute(ATTR_GATEWAYZ, gatewayz);
         model.addAttribute("natsUrl", natsService.getNatsUrl());
         model.addAttribute("alertCount24h", alertService.getAlertCountLast24h());
+        model.addAttribute("openIncidents", incidentService.getOpenIncidents(5));
         model.addAttribute(ATTR_FORMAT_BYTES, natsService);
         model.addAttribute(ATTR_ACTIVE_PAGE, "dashboard");
 
@@ -83,13 +101,22 @@ public class DashboardController {
 
     @GetMapping("/connections")
     public String connections(@RequestParam(value = "filter", required = false) String filter, Model model) {
-        ConnectionsResponse connections = natsService.getConnections();
+        ConnectionsResponse connections = natsService.getConnections(
+                null,
+                "pending",
+                "detail",
+                null,
+                1024,
+                null
+        );
+        ConnectionsResponse closedConnections = natsService.getConnections("closed", "stop", "false", null, 100, null);
         RoutezResponse routez = natsService.getRoutez();
         SubszResponse subsz = natsService.getSubsz();
         AccountStatzResponse accStatz = natsService.getAccountStatz();
         LeafzResponse leafz = natsService.getLeafz();
         GatewayzResponse gatewayz = natsService.getGatewayz();
         model.addAttribute(ATTR_CONNECTIONS, connections);
+        model.addAttribute("closedConnections", closedConnections);
         model.addAttribute(ATTR_ROUTEZ, routez);
         model.addAttribute(ATTR_SUBSZ, subsz);
         model.addAttribute(ATTR_ACC_STATZ, accStatz);
@@ -109,5 +136,41 @@ public class DashboardController {
         model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
         model.addAttribute(ATTR_ACTIVE_PAGE, "alerts");
         return "pages/alerts";
+    }
+
+    @GetMapping("/diagnostic")
+    public String diagnostic(Model model) {
+        model.addAttribute("diagnostic", healthDiagnosticService.diagnose());
+        model.addAttribute("incidents", incidentService.getOpenIncidents(20));
+        model.addAttribute("events", eventService.recentEvents(20));
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_ACTIVE_PAGE, "diagnostic");
+        return "pages/diagnostic";
+    }
+
+    @GetMapping("/incidents")
+    public String incidents(Model model) {
+        model.addAttribute("incidents", incidentService.getRecentIncidents(100));
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_ACTIVE_PAGE, "incidents");
+        return "pages/incidents";
+    }
+
+    @GetMapping("/events")
+    public String events(Model model) {
+        model.addAttribute("events", eventService.recentEvents(100));
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_ACTIVE_PAGE, "events");
+        return "pages/events";
+    }
+
+    @GetMapping("/snapshots")
+    public String snapshots(Model model) {
+        model.addAttribute("serverSnapshots", snapshotService.recentServerSnapshots(100));
+        model.addAttribute("consumerSnapshots", snapshotService.recentConsumerSnapshots(100));
+        model.addAttribute(ATTR_CONNECTED, natsService.isConnected());
+        model.addAttribute(ATTR_FORMAT_BYTES, natsService);
+        model.addAttribute(ATTR_ACTIVE_PAGE, "snapshots");
+        return "pages/snapshots";
     }
 }

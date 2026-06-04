@@ -20,6 +20,8 @@ public record AlertRuleRequest(
         @Positive(message = "Threshold must be positive")
         long threshold,
 
+        com.natsmonitor.model.Incident.Severity severity,
+
         @NotBlank(message = "Email is required")
         @Email(message = "Valid email is required")
         String emailRecipient,
@@ -41,6 +43,7 @@ public record AlertRuleRequest(
         rule.setStreamName(streamName);
         rule.setConsumerName(consumerName);
         rule.setThreshold(threshold);
+        rule.setSeverity(severity != null ? severity : com.natsmonitor.model.Incident.Severity.WARNING);
         rule.setEmailRecipient(emailRecipient);
         rule.setEnabled(enabled != null ? enabled : true);
         rule.setEmailEnabled(emailEnabled != null ? emailEnabled : true);

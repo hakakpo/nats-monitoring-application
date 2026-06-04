@@ -28,6 +28,18 @@ public record ConnectionInfo(
         @JsonProperty("slow_consumer") boolean slowConsumer,
         @JsonProperty("uptime") String uptime,
         @JsonProperty("idle") String idle,
-        @JsonProperty("rtt") String rtt
+        @JsonProperty("rtt") String rtt,
+        @JsonProperty("stop") String stop,
+        @JsonProperty("reason") String reason
 ) {
+    public ConnectionInfo(long cid, String kind, String type, String ip, int port, String start,
+                          String lastActivity, String name, String lang, String version,
+                          String account, long pendingBytes, int subscriptions,
+                          List<String> subscriptionsList, long inMsgs, long outMsgs,
+                          long inBytes, long outBytes, boolean slowConsumer,
+                          String uptime, String idle, String rtt) {
+        this(cid, kind, type, ip, port, start, lastActivity, name, lang, version, account,
+                pendingBytes, subscriptions, subscriptionsList, inMsgs, outMsgs, inBytes, outBytes,
+                slowConsumer, uptime, idle, rtt, null, null);
+    }
 }

@@ -57,3 +57,4 @@ class ServerInfoDeserializationTest {
         assertEquals(66, serverInfo.subscriptions());
     }
 }
+

@@ -3,6 +3,7 @@ package com.natsmonitor.scheduler;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.service.AlertService;
 import com.natsmonitor.service.NatsMonitoringService;
+import com.natsmonitor.service.SnapshotService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -21,13 +22,16 @@ public class MetricsScheduler {
 
     private final NatsMonitoringService natsService;
     private final AlertService alertService;
+    private final SnapshotService snapshotService;
     private final SimpMessagingTemplate messagingTemplate;
 
     public MetricsScheduler(NatsMonitoringService natsService,
                             AlertService alertService,
+                            SnapshotService snapshotService,
                             SimpMessagingTemplate messagingTemplate) {
         this.natsService = natsService;
         this.alertService = alertService;
+        this.snapshotService = snapshotService;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -55,6 +59,7 @@ public class MetricsScheduler {
                 update.put("byteRateHistory", natsService.getByteRateHistory());
 
                 messagingTemplate.convertAndSend(TOPIC_METRICS, update);
+                snapshotService.capture(info, natsService.getJetStreamInfo(), natsService.getStreams(), natsService.getConnections());
             } else {
                 messagingTemplate.convertAndSend(TOPIC_METRICS,
                         Map.of(KEY_CONNECTED, false));

@@ -33,7 +33,7 @@ public class AlertHistory {
     @Column(nullable = false)
     private AlertRule.AlertType alertType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2048)
     private String message;
 
     private String streamName;
@@ -44,6 +44,13 @@ public class AlertHistory {
 
     @Column(nullable = false)
     private long threshold;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Incident.Severity severity = Incident.Severity.WARNING;
+
+    @Column(nullable = false)
+    private boolean resolved = false;
 
     @Column(nullable = false)
     private String emailSentTo;
@@ -61,6 +68,39 @@ public class AlertHistory {
 
     @Column(nullable = false)
     private LocalDateTime triggeredAt = LocalDateTime.now();
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getRuleName() { return ruleName; }
+    public void setRuleName(String ruleName) { this.ruleName = ruleName; }
+    public AlertRule.AlertType getAlertType() { return alertType; }
+    public void setAlertType(AlertRule.AlertType alertType) { this.alertType = alertType; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public String getStreamName() { return streamName; }
+    public void setStreamName(String streamName) { this.streamName = streamName; }
+    public String getConsumerName() { return consumerName; }
+    public void setConsumerName(String consumerName) { this.consumerName = consumerName; }
+    public long getCurrentValue() { return currentValue; }
+    public void setCurrentValue(long currentValue) { this.currentValue = currentValue; }
+    public long getThreshold() { return threshold; }
+    public void setThreshold(long threshold) { this.threshold = threshold; }
+    public Incident.Severity getSeverity() { return severity; }
+    public void setSeverity(Incident.Severity severity) { this.severity = severity; }
+    public boolean isResolved() { return resolved; }
+    public void setResolved(boolean resolved) { this.resolved = resolved; }
+    public String getEmailSentTo() { return emailSentTo; }
+    public void setEmailSentTo(String emailSentTo) { this.emailSentTo = emailSentTo; }
+    public boolean isEmailSent() { return emailSent; }
+    public void setEmailSent(boolean emailSent) { this.emailSent = emailSent; }
+    public String getWebhookUrl() { return webhookUrl; }
+    public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
+    public boolean isWebhookSent() { return webhookSent; }
+    public void setWebhookSent(boolean webhookSent) { this.webhookSent = webhookSent; }
+    public String getErrorMessage() { return errorMessage; }
+    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public LocalDateTime getTriggeredAt() { return triggeredAt; }
+    public void setTriggeredAt(LocalDateTime triggeredAt) { this.triggeredAt = triggeredAt; }
 
     @Override
     public boolean equals(Object other) {
