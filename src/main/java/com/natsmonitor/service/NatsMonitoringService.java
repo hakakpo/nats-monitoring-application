@@ -25,6 +25,7 @@ public class NatsMonitoringService {
     private static final Logger log = LoggerFactory.getLogger(NatsMonitoringService.class);
     private static final String IN_RATE = "inRate";
     private static final String OUT_RATE = "outRate";
+    private static final String STREAMS_URI = "/jsz?streams=true&consumers=true&config=true&raft=true&subjects=true";
 
     private final RestClient restClient;
     private final NatsMonitoringConfig config;
@@ -78,7 +79,7 @@ public class NatsMonitoringService {
     public StreamListResponse getStreams() {
         try {
             String responseBody = restClient.get()
-                    .uri("/jsz?streams=true&consumers=true&config=true&raft=true")
+                    .uri(STREAMS_URI)
                     .retrieve()
                     .body(String.class);
             return responseBody != null ? parseStreamsResponse(responseBody) : null;

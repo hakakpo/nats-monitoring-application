@@ -466,7 +466,7 @@
                             <th>Messages</th>
                             <th>Size</th>
                             <th>Consumers</th>
-                            <th>Subjects</th>
+                            <th title="Distinct concrete subjects currently stored in the stream state">Actual Subjects</th>
                             <th>Storage</th>
                             <th>Retention</th>
                             <th></th>
@@ -482,7 +482,8 @@
                             <td th:text="${#numbers.formatInteger(stream.safeState().messages(), 1, 'COMMA')}">0</td>
                             <td th:text="${formatBytes.formatBytes(stream.safeState().bytes())}">0</td>
                             <td th:text="${stream.safeState().consumerCount()}">0</td>
-                            <td th:text="${stream.safeState().numSubjects()}">0</td>
+                            <td th:text="${#numbers.formatInteger(stream.actualSubjectCount(), 1, 'COMMA')}"
+                                th:title="${stream.configuredSubjectsLabel()}">0</td>
                             <td>
                                 <span class="badge-status"
                                       th:classappend="${stream.safeConfig().storage() == 'file'} ? 'file' : 'memory'"

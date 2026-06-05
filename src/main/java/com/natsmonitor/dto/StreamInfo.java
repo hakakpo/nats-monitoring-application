@@ -32,6 +32,23 @@ public record StreamInfo(
         return consumerDetail != null ? consumerDetail : List.of();
     }
 
+    public int actualSubjectCount() {
+        return safeState().numSubjects();
+    }
+
+    public int configuredSubjectFilterCount() {
+        List<String> subjects = safeConfig().subjects();
+        return subjects != null ? subjects.size() : 0;
+    }
+
+    public String configuredSubjectsLabel() {
+        List<String> subjects = safeConfig().subjects();
+        if (subjects == null || subjects.isEmpty()) {
+            return "No configured subject filters";
+        }
+        return "Configured filters: " + String.join(", ", subjects);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record StreamConfig(
             @JsonProperty("name") String name,

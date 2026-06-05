@@ -273,6 +273,70 @@
         chart.update('none');
     }
 
+    function initSortableTables() {
+        document.querySelectorAll('.sortable-table:not([data-enhanced-table])').forEach(function (table) {
+            table.querySelectorAll('th[data-sort]').forEach(function (header, index) {
+                header.setAttribute('role', 'button');
+                header.setAttribute('tabindex', '0');
+                header.addEventListener('click', function () {
+                    sortTable(table, index, header.dataset.sort || 'text', header);
+                });
+                header.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        header.click();
+                    }
+                });
+            });
+        });
+    }
+
+    function sortTable(table, columnIndex, sortType, activeHeader) {
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        const currentDirection = activeHeader.dataset.sortDirection === 'asc' ? 'asc' : 'desc';
+        const nextDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+
+        rows.sort(function (left, right) {
+            const leftValue = sortableCellValue(left.children[columnIndex], sortType);
+            const rightValue = sortableCellValue(right.children[columnIndex], sortType);
+            const result = compareValues(leftValue, rightValue, sortType);
+            return nextDirection === 'asc' ? result : -result;
+        });
+
+        rows.forEach(function (row) {
+            tbody.appendChild(row);
+        });
+
+        table.querySelectorAll('th[data-sort]').forEach(function (header) {
+            header.removeAttribute('data-sort-direction');
+            header.classList.remove('sort-asc', 'sort-desc');
+        });
+        activeHeader.dataset.sortDirection = nextDirection;
+        activeHeader.classList.add(nextDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+
+    function sortableCellValue(cell, sortType) {
+        if (!cell) return '';
+        const rawValue = cell.dataset.sortValue || cell.textContent || '';
+        if (sortType === 'number') {
+            return Number(String(rawValue).replace(/[^0-9.-]/g, '')) || 0;
+        }
+        if (sortType === 'date') {
+            return Date.parse(rawValue) || 0;
+        }
+        return rawValue.trim().toLowerCase();
+    }
+
+    function compareValues(leftValue, rightValue, sortType) {
+        if (sortType === 'text') {
+            return leftValue.localeCompare(rightValue);
+        }
+        return leftValue - rightValue;
+    }
+
     function clearReconnectTimer() {
         if (reconnectTimer) {
             clearTimeout(reconnectTimer);
@@ -372,6 +436,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         initThemeToggle();
         initCharts();
+        initSortableTables();
         connectWebSocket();
     });
 

@@ -23,7 +23,9 @@ nats:
   password: ""
   systemEventsEnabled: false
   pollIntervalSeconds: 5
-  snapshotRetentionHours: 24
+  snapshotRetentionHours: 120
+  historyRetentionDays: 5
+  cleanupIntervalHours: 6
   tls:
     enabled: false
     keyStorePath: ""

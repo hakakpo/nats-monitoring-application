@@ -7,9 +7,13 @@ import com.natsmonitor.dto.JetStreamInfo;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.dto.StreamInfo;
 import com.natsmonitor.dto.StreamListResponse;
+import com.natsmonitor.model.AlertHistoryRepository;
+import com.natsmonitor.model.Incident;
 import com.natsmonitor.model.NatsConsumerSnapshot;
 import com.natsmonitor.model.NatsMetricSnapshot;
+import com.natsmonitor.repository.IncidentRepository;
 import com.natsmonitor.repository.NatsConsumerSnapshotRepository;
+import com.natsmonitor.repository.NatsEventRepository;
 import com.natsmonitor.repository.NatsMetricSnapshotRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
@@ -26,8 +30,18 @@ import static org.mockito.Mockito.when;
 class SnapshotServiceTest {
     private final NatsMetricSnapshotRepository metricRepository = mock(NatsMetricSnapshotRepository.class);
     private final NatsConsumerSnapshotRepository consumerRepository = mock(NatsConsumerSnapshotRepository.class);
+    private final NatsEventRepository eventRepository = mock(NatsEventRepository.class);
+    private final IncidentRepository incidentRepository = mock(IncidentRepository.class);
+    private final AlertHistoryRepository alertHistoryRepository = mock(AlertHistoryRepository.class);
     private final NatsMonitoringConfig config = new NatsMonitoringConfig();
-    private final SnapshotService service = new SnapshotService(metricRepository, consumerRepository, config);
+    private final SnapshotService service = new SnapshotService(
+            metricRepository,
+            consumerRepository,
+            eventRepository,
+            incidentRepository,
+            alertHistoryRepository,
+            config
+    );
 
     @Test
     void shouldCaptureServerAndConsumerSnapshots() {
@@ -41,6 +55,17 @@ class SnapshotServiceTest {
         verify(consumerRepository).save(any(NatsConsumerSnapshot.class));
         verify(metricRepository).deleteByCapturedAtBefore(any());
         verify(consumerRepository).deleteByCapturedAtBefore(any());
+    }
+
+    @Test
+    void shouldCleanupMonitoringHistoryUsingFiveDayDefaultRetention() {
+        service.cleanupMonitoringHistory();
+
+        verify(metricRepository).deleteByCapturedAtBefore(any());
+        verify(consumerRepository).deleteByCapturedAtBefore(any());
+        verify(eventRepository).deleteByReceivedAtBefore(any());
+        verify(alertHistoryRepository).deleteByTriggeredAtBefore(any());
+        verify(incidentRepository).deleteByStatusAndResolvedAtBefore(org.mockito.Mockito.eq(Incident.Status.RESOLVED), any());
     }
 
     @Test

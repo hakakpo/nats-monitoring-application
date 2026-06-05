@@ -96,7 +96,7 @@ class NatsMonitoringServiceTest {
                           "name": "ORDERS",
                           "config": {
                             "name": "ORDERS",
-                            "subjects": ["orders.created"],
+                            "subjects": ["orders.*"],
                             "retention": "limits",
                             "max_consumers": -1,
                             "max_msgs": -1,
@@ -115,7 +115,7 @@ class NatsMonitoringServiceTest {
                             "consumer_count": 0,
                             "first_ts": "2026-04-23T10:00:00Z",
                             "last_ts": "2026-04-23T10:54:00Z",
-                            "num_subjects": 1,
+                            "num_subjects": 3,
                             "num_deleted": 0
                           },
                           "created": "2026-04-23T09:00:00Z"
@@ -133,6 +133,9 @@ class NatsMonitoringServiceTest {
         assertEquals(1, response.streams().size());
         assertEquals("ORDERS", response.streams().getFirst().name());
         assertEquals(12, response.streams().getFirst().state().messages());
+        assertEquals(3, response.streams().getFirst().actualSubjectCount());
+        assertEquals(1, response.streams().getFirst().configuredSubjectFilterCount());
+        assertEquals("Configured filters: orders.*", response.streams().getFirst().configuredSubjectsLabel());
     }
 
     @Test
@@ -466,7 +469,7 @@ class NatsMonitoringServiceTest {
                 }
                 """);
 
-        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true");
+        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true&subjects=true");
         RestClient.ResponseSpec streamsResponse = stubRetrieve(streamsHeaders);
         when(streamsResponse.body(String.class)).thenReturn("""
                 {
@@ -560,7 +563,7 @@ class NatsMonitoringServiceTest {
         RestClient.ResponseSpec jszResponse = stubRetrieve(stubUri(requestSpec, "/jsz"));
         when(jszResponse.body(String.class)).thenThrow(new RestClientException("boom"));
 
-        RestClient.ResponseSpec streamsResponse = stubRetrieve(stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true"));
+        RestClient.ResponseSpec streamsResponse = stubRetrieve(stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true&subjects=true"));
         when(streamsResponse.body(String.class)).thenThrow(new RestClientException("boom"));
 
         RestClient.ResponseSpec connzResponse = stubRetrieve(stubUri(requestSpec, "/connz?subs=true"));
@@ -730,7 +733,7 @@ class NatsMonitoringServiceTest {
         RestClient.RequestHeadersUriSpec<?> requestSpec = mock(RestClient.RequestHeadersUriSpec.class);
         when(restClient.get()).thenReturn((RestClient.RequestHeadersUriSpec) requestSpec);
 
-        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true");
+        RestClient.RequestHeadersSpec<?> streamsHeaders = stubUri(requestSpec, "/jsz?streams=true&consumers=true&config=true&raft=true&subjects=true");
         RestClient.ResponseSpec streamsResponse = stubRetrieve(streamsHeaders);
         when(streamsResponse.body(String.class)).thenReturn(null);
 

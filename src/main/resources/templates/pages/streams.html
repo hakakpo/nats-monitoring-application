@@ -47,8 +47,11 @@
                             <div class="info-item-value" th:text="${stream.safeState().consumerCount()}">0</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-item-label">Subjects</div>
-                            <div class="info-item-value" th:text="${stream.safeState().numSubjects()}">0</div>
+                            <div class="info-item-label"
+                                 title="Distinct concrete subjects currently stored in the stream state">Actual Subjects</div>
+                            <div class="info-item-value"
+                                 th:text="${#numbers.formatInteger(stream.actualSubjectCount(), 1, 'COMMA')}"
+                                 th:title="${stream.configuredSubjectsLabel()}">0</div>
                         </div>
                         <div class="info-item">
                             <div class="info-item-label">First Seq</div>

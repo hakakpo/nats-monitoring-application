@@ -6,49 +6,101 @@
 
 <main class="main-content">
     <div class="page-header"><h1>Snapshots</h1><p>Persisted server and consumer metric samples</p></div>
-    <div class="data-card mb-4">
-        <div class="data-card-header"><h5><i class="bi bi-hdd-network me-2"></i>Server Snapshots</h5><span class="badge-status info" th:text="|${#lists.size(serverSnapshots)} samples|">0</span></div>
+    <details class="data-card mb-4 snapshot-section" open>
+        <summary class="data-card-header snapshot-section-summary">
+            <h5><i class="bi bi-hdd-network me-2"></i>Server Snapshots</h5>
+            <span class="d-flex align-items-center gap-2">
+                <span class="badge-status info" th:text="|${#lists.size(serverSnapshots)} samples|">0</span>
+                <i class="bi bi-chevron-down collapse-indicator"></i>
+            </span>
+        </summary>
+        <div class="snapshot-section-content" id="serverSnapshotsPanel">
+        <div class="table-toolbar" th:if="${!#lists.isEmpty(serverSnapshots)}">
+            <div class="table-filter">
+                <i class="bi bi-search"></i>
+                <input class="table-filter-input" data-table-filter="#serverSnapshotsTable"
+                       placeholder="Filtrer par date, serveur, CPU, connexions..." type="search">
+            </div>
+            <button class="table-filter-clear" data-table-clear="#serverSnapshotsTable" type="button">Reset</button>
+            <span class="table-filter-count" data-table-count="#serverSnapshotsTable">0 / 0 visibles</span>
+        </div>
         <div class="data-card-body p-0">
             <div class="empty-state" th:if="${#lists.isEmpty(serverSnapshots)}"><i class="bi bi-clock-history d-block"></i><p>No server snapshots yet</p></div>
-            <table class="table-dark-custom" th:if="${!#lists.isEmpty(serverSnapshots)}">
-                <thead><tr><th>Captured</th><th>Server</th><th>CPU</th><th>Memory</th><th>Connections</th><th>Slow</th><th>Streams</th><th>Consumers</th></tr></thead>
+            <table class="table-dark-custom sortable-table" data-enhanced-table id="serverSnapshotsTable" th:if="${!#lists.isEmpty(serverSnapshots)}">
+                <thead><tr>
+                    <th aria-sort="none" data-sort="date"><button class="table-sort-control" type="button">Captured <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="text"><button class="table-sort-control" type="button">Server <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">CPU <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Memory <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Connections <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Slow <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Streams <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Consumers <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                </tr></thead>
                 <tbody>
                 <tr th:each="snapshot : ${serverSnapshots}">
-                    <td style="font-size: 0.8rem;" th:text="${#temporals.format(snapshot.capturedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                    <td style="font-size: 0.8rem;" th:attr="data-sort-value=${snapshot.capturedAt}" th:text="${#temporals.format(snapshot.capturedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
                     <td th:text="${snapshot.serverName != null ? snapshot.serverName : snapshot.serverId}">-</td>
-                    <td th:text="${#numbers.formatDecimal(snapshot.cpu, 1, 1)}">0</td>
-                    <td th:text="${formatBytes.formatBytes(snapshot.memoryBytes)}">0 B</td>
-                    <td th:text="${snapshot.connections}">0</td>
-                    <td><span th:class="${snapshot.slowConsumers > 0 ? 'badge-status warning' : ''}" th:text="${snapshot.slowConsumers}">0</span></td>
-                    <td th:text="${snapshot.streams}">0</td>
-                    <td th:text="${snapshot.consumers}">0</td>
+                    <td th:attr="data-sort-value=${snapshot.cpu}" th:text="${#numbers.formatDecimal(snapshot.cpu, 1, 1)}">0</td>
+                    <td th:attr="data-sort-value=${snapshot.memoryBytes}" th:text="${formatBytes.formatBytes(snapshot.memoryBytes)}">0 B</td>
+                    <td th:attr="data-sort-value=${snapshot.connections}" th:text="${snapshot.connections}">0</td>
+                    <td th:attr="data-sort-value=${snapshot.slowConsumers}"><span th:class="${snapshot.slowConsumers > 0 ? 'badge-status warning' : ''}" th:text="${snapshot.slowConsumers}">0</span></td>
+                    <td th:attr="data-sort-value=${snapshot.streams}" th:text="${snapshot.streams}">0</td>
+                    <td th:attr="data-sort-value=${snapshot.consumers}" th:text="${snapshot.consumers}">0</td>
                 </tr>
                 </tbody>
             </table>
         </div>
-    </div>
+        </div>
+    </details>
 
-    <div class="data-card">
-        <div class="data-card-header"><h5><i class="bi bi-people me-2"></i>Consumer Snapshots</h5><span class="badge-status info" th:text="|${#lists.size(consumerSnapshots)} samples|">0</span></div>
+    <details class="data-card snapshot-section" open>
+        <summary class="data-card-header snapshot-section-summary">
+            <h5><i class="bi bi-people me-2"></i>Consumer Snapshots</h5>
+            <span class="d-flex align-items-center gap-2">
+                <span class="badge-status info" th:text="|${#lists.size(consumerSnapshots)} samples|">0</span>
+                <i class="bi bi-chevron-down collapse-indicator"></i>
+            </span>
+        </summary>
+        <div class="snapshot-section-content" id="consumerSnapshotsPanel">
+        <div class="table-toolbar" th:if="${!#lists.isEmpty(consumerSnapshots)}">
+            <div class="table-filter">
+                <i class="bi bi-search"></i>
+                <input class="table-filter-input" data-table-filter="#consumerSnapshotsTable"
+                       placeholder="Filtrer par stream, consumer, lag, pending..." type="search">
+            </div>
+            <button class="table-filter-clear" data-table-clear="#consumerSnapshotsTable" type="button">Reset</button>
+            <span class="table-filter-count" data-table-count="#consumerSnapshotsTable">0 / 0 visibles</span>
+        </div>
         <div class="data-card-body p-0">
             <div class="empty-state" th:if="${#lists.isEmpty(consumerSnapshots)}"><i class="bi bi-people d-block"></i><p>No consumer snapshots yet</p></div>
-            <table class="table-dark-custom" th:if="${!#lists.isEmpty(consumerSnapshots)}">
-                <thead><tr><th>Captured</th><th>Stream</th><th>Consumer</th><th>Lag</th><th>Pending</th><th>Ack Pending</th><th>Redelivered</th></tr></thead>
+            <table class="table-dark-custom sortable-table" data-enhanced-table id="consumerSnapshotsTable" th:if="${!#lists.isEmpty(consumerSnapshots)}">
+                <thead><tr>
+                    <th aria-sort="none" data-sort="date"><button class="table-sort-control" type="button">Captured <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="text"><button class="table-sort-control" type="button">Stream <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="text"><button class="table-sort-control" type="button">Consumer <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Lag <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Pending <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Ack Pending <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                    <th aria-sort="none" data-sort="number"><button class="table-sort-control" type="button">Redelivered <i class="bi bi-arrow-down-up ms-1 table-sort-icon"></i></button></th>
+                </tr></thead>
                 <tbody>
                 <tr th:each="snapshot : ${consumerSnapshots}">
-                    <td style="font-size: 0.8rem;" th:text="${#temporals.format(snapshot.capturedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                    <td style="font-size: 0.8rem;" th:attr="data-sort-value=${snapshot.capturedAt}" th:text="${#temporals.format(snapshot.capturedAt, 'yyyy-MM-dd HH:mm:ss')}">-</td>
                     <td th:text="${snapshot.streamName}">-</td>
                     <td th:text="${snapshot.consumerName}">-</td>
-                    <td><span th:class="${snapshot.lag > 0 ? 'badge-status warning' : ''}" th:text="${snapshot.lag}">0</span></td>
-                    <td th:text="${snapshot.pendingMessages}">0</td>
-                    <td><span th:class="${snapshot.ackPending > 0 ? 'badge-status danger' : ''}" th:text="${snapshot.ackPending}">0</span></td>
-                    <td><span th:class="${snapshot.redelivered > 0 ? 'badge-status danger' : ''}" th:text="${snapshot.redelivered}">0</span></td>
+                    <td th:attr="data-sort-value=${snapshot.lag}"><span th:class="${snapshot.lag > 0 ? 'badge-status warning' : ''}" th:text="${snapshot.lag}">0</span></td>
+                    <td th:attr="data-sort-value=${snapshot.pendingMessages}" th:text="${snapshot.pendingMessages}">0</td>
+                    <td th:attr="data-sort-value=${snapshot.ackPending}"><span th:class="${snapshot.ackPending > 0 ? 'badge-status danger' : ''}" th:text="${snapshot.ackPending}">0</span></td>
+                    <td th:attr="data-sort-value=${snapshot.redelivered}"><span th:class="${snapshot.redelivered > 0 ? 'badge-status danger' : ''}" th:text="${snapshot.redelivered}">0</span></td>
                 </tr>
                 </tbody>
             </table>
         </div>
-    </div>
+        </div>
+    </details>
 </main>
 <footer th:replace="~{fragments/layout :: scripts}"></footer>
+<script th:src="@{/js/snapshot-tables.js}"></script>
 </body>
 </html>

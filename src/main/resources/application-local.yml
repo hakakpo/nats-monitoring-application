@@ -51,7 +51,9 @@ nats:
     password: ${NATS_PASSWORD:local}
     system-events-enabled: ${NATS_SYSTEM_EVENTS_ENABLED:true}
     poll-interval-seconds: ${NATS_POLL_INTERVAL:5}
-    snapshot-retention-hours: ${NATS_SNAPSHOT_RETENTION_HOURS:24}
+    snapshot-retention-hours: ${NATS_SNAPSHOT_RETENTION_HOURS:120}
+    history-retention-days: ${NATS_HISTORY_RETENTION_DAYS:5}
+    cleanup-interval-hours: ${NATS_CLEANUP_INTERVAL_HOURS:6}
     tls:
       enabled: ${NATS_TLS_ENABLED:false}
       key-store-path: ${NATS_TLS_KEY_STORE_PATH:}

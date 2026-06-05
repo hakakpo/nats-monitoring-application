@@ -13,4 +13,6 @@ public interface AlertHistoryRepository extends JpaRepository<AlertHistory, Long
     List<AlertHistory> findByTriggeredAtAfter(LocalDateTime after);
 
     long countByTriggeredAtAfter(LocalDateTime after);
+
+    long deleteByTriggeredAtBefore(LocalDateTime before);
 }

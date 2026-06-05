@@ -46,6 +46,10 @@ spec:
               value: {{ .Values.nats.pollIntervalSeconds | quote }}
             - name: NATS_SNAPSHOT_RETENTION_HOURS
               value: {{ .Values.nats.snapshotRetentionHours | quote }}
+            - name: NATS_HISTORY_RETENTION_DAYS
+              value: {{ .Values.nats.historyRetentionDays | quote }}
+            - name: NATS_CLEANUP_INTERVAL_HOURS
+              value: {{ .Values.nats.cleanupIntervalHours | quote }}
             - name: NATS_TLS_ENABLED
               value: {{ .Values.nats.tls.enabled | quote }}
             - name: NATS_TLS_KEY_STORE_PATH

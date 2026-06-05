@@ -6,11 +6,16 @@ import com.natsmonitor.dto.JetStreamInfo;
 import com.natsmonitor.dto.ServerInfo;
 import com.natsmonitor.dto.StreamInfo;
 import com.natsmonitor.dto.StreamListResponse;
+import com.natsmonitor.model.AlertHistoryRepository;
+import com.natsmonitor.model.Incident;
 import com.natsmonitor.model.NatsConsumerSnapshot;
 import com.natsmonitor.model.NatsMetricSnapshot;
+import com.natsmonitor.repository.IncidentRepository;
 import com.natsmonitor.repository.NatsConsumerSnapshotRepository;
+import com.natsmonitor.repository.NatsEventRepository;
 import com.natsmonitor.repository.NatsMetricSnapshotRepository;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +27,22 @@ import java.util.Objects;
 public class SnapshotService {
     private final NatsMetricSnapshotRepository metricSnapshotRepository;
     private final NatsConsumerSnapshotRepository consumerSnapshotRepository;
+    private final NatsEventRepository eventRepository;
+    private final IncidentRepository incidentRepository;
+    private final AlertHistoryRepository alertHistoryRepository;
     private final NatsMonitoringConfig config;
 
     public SnapshotService(NatsMetricSnapshotRepository metricSnapshotRepository,
                            NatsConsumerSnapshotRepository consumerSnapshotRepository,
+                           NatsEventRepository eventRepository,
+                           IncidentRepository incidentRepository,
+                           AlertHistoryRepository alertHistoryRepository,
                            NatsMonitoringConfig config) {
         this.metricSnapshotRepository = Objects.requireNonNull(metricSnapshotRepository, "metricSnapshotRepository must not be null");
         this.consumerSnapshotRepository = Objects.requireNonNull(consumerSnapshotRepository, "consumerSnapshotRepository must not be null");
+        this.eventRepository = Objects.requireNonNull(eventRepository, "eventRepository must not be null");
+        this.incidentRepository = Objects.requireNonNull(incidentRepository, "incidentRepository must not be null");
+        this.alertHistoryRepository = Objects.requireNonNull(alertHistoryRepository, "alertHistoryRepository must not be null");
         this.config = Objects.requireNonNull(config, "config must not be null");
     }
 
@@ -83,6 +97,16 @@ public class SnapshotService {
         pruneOldSnapshots();
     }
 
+    @Scheduled(fixedDelayString = "#{${nats.monitoring.cleanup-interval-hours:6} * 3600000}")
+    @Transactional
+    public void cleanupMonitoringHistory() {
+        LocalDateTime historyCutoff = LocalDateTime.now().minusDays(historyRetentionDays());
+        pruneOldSnapshots();
+        eventRepository.deleteByReceivedAtBefore(historyCutoff);
+        alertHistoryRepository.deleteByTriggeredAtBefore(historyCutoff);
+        incidentRepository.deleteByStatusAndResolvedAtBefore(Incident.Status.RESOLVED, historyCutoff);
+    }
+
     @Transactional(readOnly = true)
     public List<NatsMetricSnapshot> recentServerSnapshots(int limit) {
         return metricSnapshotRepository.findAllByOrderByCapturedAtDesc(PageRequest.of(0, Math.max(1, limit))).getContent();
@@ -94,9 +118,13 @@ public class SnapshotService {
     }
 
     private void pruneOldSnapshots() {
-        int retentionHours = Math.max(1, config.getSnapshotRetentionHours());
+        int retentionHours = Math.min(Math.max(1, config.getSnapshotRetentionHours()), historyRetentionDays() * 24);
         LocalDateTime cutoff = LocalDateTime.now().minusHours(retentionHours);
         metricSnapshotRepository.deleteByCapturedAtBefore(cutoff);
         consumerSnapshotRepository.deleteByCapturedAtBefore(cutoff);
+    }
+
+    private int historyRetentionDays() {
+        return Math.max(1, config.getHistoryRetentionDays());
     }
 }
