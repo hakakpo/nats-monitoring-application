@@ -160,7 +160,7 @@ src/
 ├── main/resources/
 │   ├── application.yml
 │   ├── application-{profile}.yml
-│   └── db/                # Migrations (Flyway: db/migration/ OR Liquibase: db/changelog/)
+│   └── db/                # Liquibase migrations: db/changelog/
 └── test/java/com/company/app/
     ├── controller/        # @WebMvcTest (HTTP layer only)
     ├── service/           # Unit tests (Mockito)
@@ -314,7 +314,7 @@ To remove Lombok: delete the `<dependency>` and annotation processor paths from 
   for the version compatible with Spring Boot 4.x before enabling
 - **Lombok** — allowed for `@Slf4j`, `@Builder`, `@RequiredArgsConstructor` only
 - **Jakarta Validation** for input validation (`@Valid`, `@NotNull`, etc.)
-- **Flyway** or **Liquibase** for database migrations (never Hibernate auto-DDL in production)
+- **Liquibase** for database migrations (never Hibernate auto-DDL in production)
 - **Jackson** for JSON (configure globally, never per-endpoint)
 
 ## API Design (Contract-First with OpenAPI)

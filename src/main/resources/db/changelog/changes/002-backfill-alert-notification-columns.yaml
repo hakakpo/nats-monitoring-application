@@ -1,0 +1,207 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-alert-rules-consumer-name
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_rules
+            columnName: consumer_name
+      changes:
+        - addColumn:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: consumer_name
+                  type: VARCHAR(255)
+      rollback:
+        - dropColumn:
+            tableName: alert_rules
+            columnName: consumer_name
+
+  - changeSet:
+      id: 002-add-alert-rules-severity
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_rules
+            columnName: severity
+      changes:
+        - addColumn:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  defaultValue: WARNING
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_rules
+            columnName: severity
+
+  - changeSet:
+      id: 002-add-alert-rules-email-enabled
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_rules
+            columnName: email_enabled
+      changes:
+        - addColumn:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: email_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_rules
+            columnName: email_enabled
+
+  - changeSet:
+      id: 002-add-alert-rules-webhook-url
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_rules
+            columnName: webhook_url
+      changes:
+        - addColumn:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: webhook_url
+                  type: VARCHAR(2048)
+      rollback:
+        - dropColumn:
+            tableName: alert_rules
+            columnName: webhook_url
+
+  - changeSet:
+      id: 002-add-alert-rules-webhook-enabled
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_rules
+            columnName: webhook_enabled
+      changes:
+        - addColumn:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: webhook_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_rules
+            columnName: webhook_enabled
+
+  - changeSet:
+      id: 002-add-alert-history-severity
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_history
+            columnName: severity
+      changes:
+        - addColumn:
+            tableName: alert_history
+            columns:
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  defaultValue: WARNING
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_history
+            columnName: severity
+
+  - changeSet:
+      id: 002-add-alert-history-resolved
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_history
+            columnName: resolved
+      changes:
+        - addColumn:
+            tableName: alert_history
+            columns:
+              - column:
+                  name: resolved
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_history
+            columnName: resolved
+
+  - changeSet:
+      id: 002-add-alert-history-webhook-url
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_history
+            columnName: webhook_url
+      changes:
+        - addColumn:
+            tableName: alert_history
+            columns:
+              - column:
+                  name: webhook_url
+                  type: VARCHAR(2048)
+      rollback:
+        - dropColumn:
+            tableName: alert_history
+            columnName: webhook_url
+
+  - changeSet:
+      id: 002-add-alert-history-webhook-sent
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          columnExists:
+            tableName: alert_history
+            columnName: webhook_sent
+      changes:
+        - addColumn:
+            tableName: alert_history
+            columns:
+              - column:
+                  name: webhook_sent
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: alert_history
+            columnName: webhook_sent

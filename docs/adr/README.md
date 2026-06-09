@@ -68,5 +68,9 @@ All ADRs should be reviewed before making changes that might conflict with previ
 - **0004**: Database Migration Tool — Flyway vs Liquibase (both supported, pick one per project)
 - **0005**: No ArchUnit (Rely on Documentation and Code Review)
 - **0006**: Build Tool Choice — Maven vs Gradle (both supported, pick one per project)
+- **0007**: Contract-First API Development with OpenAPI Generator
+- **0008**: MapStruct for Object Mapping
+- **0009**: Virtual Threads
+- **0010**: Liquibase for Oracle Migrations
 
 See each ADR for details.

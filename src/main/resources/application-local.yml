@@ -12,21 +12,20 @@ spring:
     suffix: .html
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/nats-monitor-local-db;AUTO_SERVER=TRUE}
-    driver-class-name: org.h2.Driver
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: ${SPRING_JPA_SHOW_SQL:false}
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.H2Dialect}
     properties:
       hibernate:
         format_sql: true
-  flyway:
+  liquibase:
     enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
   h2:
     console:
       enabled: true
@@ -86,5 +85,5 @@ management:
 logging:
   level:
     com.natsmonitor: INFO
-    org.flywaydb: INFO
+    liquibase: INFO
     org.hibernate.SQL: ${LOCAL_HIBERNATE_SQL_LOG_LEVEL:WARN}

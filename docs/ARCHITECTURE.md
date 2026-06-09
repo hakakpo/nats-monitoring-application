@@ -39,7 +39,7 @@ business logic, repositories handle persistence.
                                    ▼
                     ┌─────────────────────────────────┐
                     │         DATABASE                 │
-                    │  PostgreSQL 16                    │
+                    │  Oracle 19.3c                     │
                     └─────────────────────────────────┘
 ```
 
@@ -108,9 +108,7 @@ src/main/resources/
 ├── application-staging.yml
 ├── application-prod.yml
 └── db/
-    ├── migration/                   ← Flyway SQL migrations
-    │   └── V1__create_orders_table.sql
-    └── changelog/                   ← Liquibase changelogs (alternative)
+    └── changelog/                   ← Liquibase changelogs
         ├── db.changelog-master.yaml
         └── changes/
 
@@ -327,7 +325,7 @@ class OrderControllerTest {
 @DataJpaTest
 @Testcontainers
 class OrderRepositoryTest {
-    @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
+    @Container static OracleContainer oracle = new OracleContainer("gvenzl/oracle-xe:21-slim-faststart");
     @Autowired OrderRepository orderRepository;
 
     @Test
@@ -344,7 +342,7 @@ class OrderRepositoryTest {
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Testcontainers
 class OrderControllerIT {
-    @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
+    @Container static OracleContainer oracle = new OracleContainer("gvenzl/oracle-xe:21-slim-faststart");
     @Autowired TestRestTemplate restTemplate;
 
     @Test
@@ -362,15 +360,12 @@ class OrderControllerIT {
 
 ## Database Strategy
 
-This project supports **Flyway** or **Liquibase** for schema migrations (pick one per project).
-Detect which is active by checking the build file dependencies and `src/main/resources/db/`:
-- **Flyway**: SQL files in `db/migration/`, naming `V{number}__{description}.sql`
-- **Liquibase**: YAML changelogs in `db/changelog/changes/`, naming `{number}-{description}.yaml`
+This project uses **Liquibase** for schema migrations. Changelogs live under
+`src/main/resources/db/changelog/`, with `db.changelog-master.yaml` as the entry point.
 
-Regardless of tool:
 - Never use `spring.jpa.hibernate.ddl-auto=update` in production
 - Every schema change is version-controlled and reviewable
-- Test migrations in CI against a real database (Testcontainers)
+- Test migrations in CI against Oracle-compatible Testcontainers
 
 ## Observability
 

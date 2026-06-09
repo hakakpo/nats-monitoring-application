@@ -1,0 +1,596 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-alert-rules
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: alert_rules
+      changes:
+        - createTable:
+            tableName: alert_rules
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stream_name
+                  type: VARCHAR(255)
+              - column:
+                  name: consumer_name
+                  type: VARCHAR(255)
+              - column:
+                  name: threshold
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  defaultValue: WARNING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_recipient
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: webhook_url
+                  type: VARCHAR(2048)
+              - column:
+                  name: webhook_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_triggered
+                  type: TIMESTAMP
+              - column:
+                  name: last_notified
+                  type: TIMESTAMP
+              - column:
+                  name: cooldown_minutes
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: alert_rules
+
+  - changeSet:
+      id: 001-create-alert-history
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: alert_history
+      changes:
+        - createTable:
+            tableName: alert_history
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: rule_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: alert_type
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message
+                  type: VARCHAR(2048)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stream_name
+                  type: VARCHAR(255)
+              - column:
+                  name: consumer_name
+                  type: VARCHAR(255)
+              - column:
+                  name: current_value
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: threshold
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  defaultValue: WARNING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resolved
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_sent_to
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email_sent
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: webhook_url
+                  type: VARCHAR(2048)
+              - column:
+                  name: webhook_sent
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: error_message
+                  type: VARCHAR(255)
+              - column:
+                  name: triggered_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: alert_history
+
+  - changeSet:
+      id: 001-create-nats-metric-snapshots
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: nats_metric_snapshots
+      changes:
+        - createTable:
+            tableName: nats_metric_snapshots
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: captured_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_id
+                  type: VARCHAR(255)
+              - column:
+                  name: server_name
+                  type: VARCHAR(255)
+              - column:
+                  name: uptime
+                  type: VARCHAR(255)
+              - column:
+                  name: memory_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cpu
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: connections
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_connections
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subscriptions
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slow_consumers
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: in_msgs
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: out_msgs
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: in_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: out_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: routes
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: leafnodes
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: streams
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: consumers
+                  type: INT
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: nats_metric_snapshots
+
+  - changeSet:
+      id: 001-create-nats-consumer-snapshots
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: nats_consumer_snapshots
+      changes:
+        - createTable:
+            tableName: nats_consumer_snapshots
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: captured_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stream_name
+                  type: VARCHAR(255)
+              - column:
+                  name: consumer_name
+                  type: VARCHAR(255)
+              - column:
+                  name: durable_name
+                  type: VARCHAR(255)
+              - column:
+                  name: filter_subject
+                  type: VARCHAR(1024)
+              - column:
+                  name: lag
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pending_messages
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ack_pending
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: redelivered
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: waiting
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: nats_consumer_snapshots
+
+  - changeSet:
+      id: 001-create-nats-events
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: nats_events
+      changes:
+        - createTable:
+            tableName: nats_events
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: received_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: subject
+                  type: VARCHAR(1024)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: server_id
+                  type: VARCHAR(255)
+              - column:
+                  name: account_id
+                  type: VARCHAR(255)
+              - column:
+                  name: resource
+                  type: VARCHAR(1024)
+              - column:
+                  name: summary
+                  type: VARCHAR(2048)
+              - column:
+                  name: payload
+                  type: CLOB
+      rollback:
+        - dropTable:
+            tableName: nats_events
+
+  - changeSet:
+      id: 001-create-incidents
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          tableExists:
+            tableName: incidents
+      changes:
+        - createTable:
+            tableName: incidents
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: severity
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resource
+                  type: VARCHAR(1024)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: summary
+                  type: VARCHAR(2048)
+              - column:
+                  name: first_seen
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_seen
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resolved_at
+                  type: TIMESTAMP
+              - column:
+                  name: event_count
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_event_type
+                  type: VARCHAR(1024)
+              - column:
+                  name: last_message
+                  type: VARCHAR(2048)
+      rollback:
+        - dropTable:
+            tableName: incidents
+
+  - changeSet:
+      id: 001-create-alert-history-triggered-at-index
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          indexExists:
+            indexName: idx_alert_history_triggered_at
+            tableName: alert_history
+      changes:
+        - createIndex:
+            indexName: idx_alert_history_triggered_at
+            tableName: alert_history
+            columns:
+              - column:
+                  name: triggered_at
+      rollback:
+        - dropIndex:
+            indexName: idx_alert_history_triggered_at
+            tableName: alert_history
+
+  - changeSet:
+      id: 001-create-metric-snapshots-captured-at-index
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          indexExists:
+            indexName: idx_metric_snapshots_captured_at
+            tableName: nats_metric_snapshots
+      changes:
+        - createIndex:
+            indexName: idx_metric_snapshots_captured_at
+            tableName: nats_metric_snapshots
+            columns:
+              - column:
+                  name: captured_at
+      rollback:
+        - dropIndex:
+            indexName: idx_metric_snapshots_captured_at
+            tableName: nats_metric_snapshots
+
+  - changeSet:
+      id: 001-create-consumer-snapshots-captured-at-index
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          indexExists:
+            indexName: idx_consumer_snapshots_captured_at
+            tableName: nats_consumer_snapshots
+      changes:
+        - createIndex:
+            indexName: idx_consumer_snapshots_captured_at
+            tableName: nats_consumer_snapshots
+            columns:
+              - column:
+                  name: captured_at
+      rollback:
+        - dropIndex:
+            indexName: idx_consumer_snapshots_captured_at
+            tableName: nats_consumer_snapshots
+
+  - changeSet:
+      id: 001-create-nats-events-received-at-index
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          indexExists:
+            indexName: idx_nats_events_received_at
+            tableName: nats_events
+      changes:
+        - createIndex:
+            indexName: idx_nats_events_received_at
+            tableName: nats_events
+            columns:
+              - column:
+                  name: received_at
+      rollback:
+        - dropIndex:
+            indexName: idx_nats_events_received_at
+            tableName: nats_events
+
+  - changeSet:
+      id: 001-create-incidents-status-last-seen-index
+      author: codex
+      preConditions:
+        onFail: MARK_RAN
+        not:
+          indexExists:
+            indexName: idx_incidents_status_last_seen
+            tableName: incidents
+      changes:
+        - createIndex:
+            indexName: idx_incidents_status_last_seen
+            tableName: incidents
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: last_seen
+      rollback:
+        - dropIndex:
+            indexName: idx_incidents_status_last_seen
+            tableName: incidents

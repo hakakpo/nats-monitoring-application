@@ -10,19 +10,18 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
   datasource:
-    url: jdbc:h2:file:./data/nats-monitor-db
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:file:./data/nats-monitor-db}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
-    database-platform: org.hibernate.dialect.H2Dialect
-  flyway:
+    database-platform: ${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.H2Dialect}
+  liquibase:
     enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
   h2:
     console:
       enabled: ${H2_CONSOLE_ENABLED:false}
